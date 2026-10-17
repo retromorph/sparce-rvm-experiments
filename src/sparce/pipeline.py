@@ -236,7 +236,7 @@ def stage_generate(cfg: dict, paths: Paths, log: Log, tasks: list[Task], llm, in
                             temperature=float(mcfg.get("temperature", 0.7)), top_p=float(mcfg.get("top_p", 0.95)),
                             batch_size=int(mcfg["batch_size"]), seed=int(cfg["run"]["seed"]))
     for source, path, subset in (("base", paths.candidates, tasks),
-                                 ("rag", paths.rag_candidates, [t for t in tasks if t.split in ("val", "test")])):
+                                 ("rag", paths.rag_candidates, [t for t in tasks if t.split == "test"])):
         cache = _load_cache(path)
         todo = [t for t in subset if t.task_id not in cache]
         log(f"generate[{source}]: {len(subset) - len(todo)} cached, {len(todo)} to generate (K={gcfg.num_candidates}, max_new={gcfg.max_new_tokens})")

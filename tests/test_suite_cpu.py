@@ -80,7 +80,9 @@ class FakeLLM:
             r = int(tid[:6], 16) % 10
             greedy = code.replace("oldcall_", "newcall_") if r < 3 else code
             sample = code.replace("oldcall_", "newcall_") if r % 2 == 0 else code.replace("oldcall_", "wrongcall_")
-            out.append([Generation(greedy, greedy, True, 100, 50, "greedy", "eos", 10.0), Generation(sample, sample, True, 100, 50, "sample", "eos", 10.0)])
+            wrong = code.replace("oldcall_", "brokencall_")
+            out.append([Generation(greedy, greedy, True, 100, 50, "greedy", "eos", 10.0), Generation(sample, sample, True, 100, 50, "sample", "eos", 10.0),
+                        Generation(wrong, wrong, True, 100, 50, "sample", "eos", 10.0)])
         return out
 
     def score_candidates(self, prompts, responses, batch_size=8):
@@ -96,6 +98,7 @@ def cfg(tmp_path):
     c["eval"]["bootstrap_replicates"] = 200
     c["eval"]["capacities"] = [4, 8]
     c["eval"]["update_checkpoints"] = [5, 10, 100]
+    c["model"]["num_candidates"] = 3
     c["rvm"]["length_scale_grid"] = [0.6]
     c["rvm"]["min_support_grid"] = [0.3]
     c["rvm"]["posterior_z_grid"] = [1.0]

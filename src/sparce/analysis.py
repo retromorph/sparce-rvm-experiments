@@ -31,7 +31,7 @@ CONTROL_KINDS = ("previously_correct", "old_version", "near_api", "near_api_old"
 # --------------------------------------------------------------------------- pair construction
 @dataclass
 class TaskPair:
-    ex: PairExample
+    ex: PairExample                 # primary (first distinct) alternative vs the incumbent; kept for metadata
     task: Task
     source: str
     base_index: int
@@ -42,6 +42,7 @@ class TaskPair:
     gen_ms: float
     verifier_ms: float
     extracted_ok: list[bool]
+    alt_examples: list[PairExample] = field(default_factory=list)   # one PairExample per DISTINCT alternative
 
     @property
     def recall_at_k(self) -> bool:
@@ -67,27 +68,49 @@ def build_pairs(tasks: Sequence[Task], cand_records: dict, ver: dict, emb: dict,
         scores = [c.get("score") for c in cands]
         scores = [(-1e9 if (s is None or (isinstance(s, float) and math.isnan(s))) else float(s)) for s in scores]
         base_i = int(np.argmax(scores))  # argmax returns the first (greedy) on ties
-        alt_i = 1 if base_i == 0 else 0
         statuses = [ver.get((t.task_id, source, i), {}) for i in range(len(cands))]
         cand_pass = [_status_to_bool(s.get("status", "missing")) for s in statuses]
-        ea = emb.get(embedding_key(t.task_id, source, alt_i))
         eb = emb.get(embedding_key(t.task_id, source, base_i))
-        if ea is None or eb is None:
+        if eb is None:
             continue
         evidence = sum(len(c["code"]) + len(c["text"]) for c in cands) + len(t.request_code) + len(t.request_stderr) + 400
-        ex = PairExample(
-            task_id=t.task_id, cluster_id=t.cluster_id, family_id=t.family_id, kind=t.kind, split=t.split, subset=t.subset,
-            scope=f"{t.package}=={t.package_version}", timestamp=t.timestamp, emb_a=np.asarray(ea), emb_b=np.asarray(eb),
-            d0=float(scores[alt_i] - scores[base_i]) if scores[alt_i] > -1e8 else -5.0,
-            a_pass=cand_pass[alt_i], b_pass=cand_pass[base_i],
-            request_tokens=identifier_tokens(t.request_code), tokens_a=identifier_tokens(cands[alt_i]["code"]),
-            tokens_b=identifier_tokens(cands[base_i]["code"]), evidence_bytes=int(evidence),
-            evidence_hash="|".join(s.get("evidence_hash", "") for s in statuses))
-        pairs.append(TaskPair(ex, t, source, base_i, alt_i, cand_pass,
+        req_tokens = identifier_tokens(t.request_code)
+        tokens_b = identifier_tokens(cands[base_i]["code"])
+        scope = f"{t.package}=={t.package_version}"
+        seen_codes = {cands[base_i]["code"].strip()}
+        alts: list[PairExample] = []
+        for i, c in enumerate(cands):
+            if i == base_i or c["code"].strip() in seen_codes:
+                continue  # identical programs are not distinct alternatives
+            ea = emb.get(embedding_key(t.task_id, source, i))
+            if ea is None:
+                continue
+            seen_codes.add(c["code"].strip())
+            alts.append(PairExample(
+                task_id=t.task_id, cluster_id=t.cluster_id, family_id=t.family_id, kind=t.kind, split=t.split, subset=t.subset,
+                scope=scope, timestamp=t.timestamp, emb_a=np.asarray(ea), emb_b=np.asarray(eb),
+                d0=float(scores[i] - scores[base_i]) if scores[i] > -1e8 else -5.0,
+                a_pass=cand_pass[i], b_pass=cand_pass[base_i], request_tokens=req_tokens,
+                tokens_a=identifier_tokens(c["code"]), tokens_b=tokens_b, evidence_bytes=int(evidence // max(1, len(cands) - 1)),
+                evidence_hash="|".join(s.get("evidence_hash", "") for s in statuses)))
+        if alts:
+            primary = alts[0]
+            alt_index = next(i for i, c in enumerate(cands) if i != base_i and c["code"].strip() != cands[base_i]["code"].strip())
+        else:  # no distinct alternative: the incumbent is the only program; memory cannot change anything
+            primary = PairExample(t.task_id, t.cluster_id, t.family_id, t.kind, t.split, t.subset, scope, t.timestamp,
+                                  np.asarray(eb), np.asarray(eb), 0.0, cand_pass[base_i], cand_pass[base_i], req_tokens, tokens_b, tokens_b,
+                                  int(evidence), evidence_hash="|".join(s.get("evidence_hash", "") for s in statuses))
+            alt_index = base_i
+        pairs.append(TaskPair(primary, t, source, base_i, alt_index, cand_pass,
                               sum(c["prompt_tokens"] for c in cands), sum(c["completion_tokens"] for c in cands),
                               sum(c["gen_ms"] for c in cands), sum(float(s.get("execution_ms", 0.0)) for s in statuses),
-                              [bool(c.get("extracted_ok", False)) for c in cands]))
+                              [bool(c.get("extracted_ok", False)) for c in cands], alts))
     return pairs
+
+
+def events_of(pairs: Sequence[TaskPair]) -> list[PairExample]:
+    """Flatten verified (alternative, incumbent) pairs for fitting; one event per distinct alternative."""
+    return [e for p in pairs for e in p.alt_examples]
 
 
 # --------------------------------------------------------------------------- evaluation primitives
@@ -109,15 +132,42 @@ class Outcome:
 
 
 def evaluate(method, pairs: Sequence[TaskPair]) -> list[Outcome]:
+    """Pick the recommended alternative with the largest lower-bound margin, else keep the incumbent."""
     out: list[Outcome] = []
     for p in pairs:
         start = time.perf_counter()
-        d = method.decide(p.ex)
+        decisions = [(method.decide(e), e) for e in p.alt_examples]
         lat = (time.perf_counter() - start) * 1000.0
-        pick_pass = p.ex.a_pass if d.recommend_alternative else p.ex.b_pass
+        chosen = None
+        for d, e in decisions:
+            if d.recommend_alternative and (chosen is None or d.lower > chosen[0].lower):
+                chosen = (d, e)
+        if chosen is not None:
+            d, e = chosen
+            pick_pass = e.a_pass
+            label = e.label
+        else:
+            # report the most favourable abstention for diagnostics
+            if decisions:
+                d, e = max(decisions, key=lambda de: de[0].lower)
+                label = e.label
+            else:
+                d, e, label = Decision(False, "no_distinct_alternative", p.ex.d0, p.ex.d0, 0.0, 0.0, float(expit(p.ex.d0))), p.ex, None
+            pick_pass = p.ex.b_pass
         out.append(Outcome(p.ex.task_id, p.ex.cluster_id, p.ex.kind, p.ex.subset, p.base_correct, pick_pass is True,
-                           d.recommend_alternative, d.reason, float(d.probability), p.ex.label, lat, float(d.margin), float(d.lower)))
+                           chosen is not None, d.reason, float(d.probability), label, lat, float(d.margin), float(d.lower)))
     return out
+
+
+def pair_level(method, pairs: Sequence[TaskPair]) -> list[tuple[float, int]]:
+    """(probability, label) for every labelled alternative/incumbent pair: used for calibration."""
+    rows = []
+    for p in pairs:
+        for e in p.alt_examples:
+            if e.label is None:
+                continue
+            rows.append((float(method.decide(e).probability), int(e.label)))
+    return rows
 
 
 def summarize(outcomes: Sequence[Outcome], *, n_boot: int = 2000, seed: int = 42, with_ci: bool = True) -> dict:
@@ -180,7 +230,7 @@ def tune(method_name: str, grid: list[dict], train: Sequence[TaskPair], val: Seq
     best = None
     for params in grid:
         m = make_method(method_name, capacity=capacity, seed=seed, params=params)
-        m.fit([p.ex for p in train], seed=seed)
+        m.fit(events_of(train), seed=seed)
         s = summarize(evaluate(m, val), with_ci=False)
         rec = {"params": params, "val_pass_at_1": s["pass_at_1"], "regressions": s["regressions"], "fixes": s["fixes"],
                "activations": s["activations"], "active_count": m.active_count}
@@ -233,8 +283,10 @@ def run_e1(data: DataBundle, log, seeds: Sequence[int]) -> dict:
     results["tokens_per_task"] = {"base": float(np.mean([p.tokens_prompt + p.tokens_completion for p in test])) if test else 0.0}
     results["gen_ms_per_task_p95"] = percentile([p.gen_ms for p in test], 95)
     results["verifier_ms_per_task_mean"] = float(np.mean([p.verifier_ms for p in test])) if test else 0.0
-    results["train_events_with_pair_label"] = sum(1 for p in train if p.ex.label is not None)
-    results["cold_evidence_bytes"] = cold_evidence_bytes([p.ex for p in train])
+    results["train_events_with_pair_label"] = sum(1 for e in events_of(train) if e.label is not None)
+    results["train_distinct_alternatives"] = len(events_of(train))
+    results["mean_distinct_alternatives_per_test_task"] = float(np.mean([len(p.alt_examples) for p in test])) if test else 0.0
+    results["cold_evidence_bytes"] = cold_evidence_bytes(events_of(train))
 
     base_outs = evaluate(make_method("base"), test)
     method_names = [m for m in cfg["eval"]["e1_methods"] if m != "rag"]
@@ -249,7 +301,7 @@ def run_e1(data: DataBundle, log, seeds: Sequence[int]) -> dict:
             if name == "knn_cap" and rvm_active is None:
                 continue
             m = make_method(name, capacity=capacity, seed=seed, params=params)
-            m.fit([p.ex for p in train], seed=seed)
+            m.fit(events_of(train), seed=seed)
             if name == "rvm":
                 rvm_active = max(1, m.active_count)
             outs = evaluate(m, test)
@@ -346,12 +398,12 @@ def run_e2(data: DataBundle, log, seeds: Sequence[int], tuned: dict) -> dict:
     train, test = data.split("train"), data.split("test")
     test_repair = _repair(test)
     caps = [int(c) for c in cfg["eval"]["capacities"]]
-    pool_size = len(set((p.ex.scope, p.ex.emb_a.tobytes()) for p in train) | set((p.ex.scope, p.ex.emb_b.tobytes()) for p in train))
+    pool_size = len(set((e.scope, e.emb_a.tobytes()) for e in events_of(train)) | set((e.scope, e.emb_b.tobytes()) for e in events_of(train)))
     caps = [c for c in caps if c <= max(pool_size, 8)]
     rows: list[dict] = []
     outs_store: dict[tuple, list[Outcome]] = {}
     full = make_method("knn_full", params=dict(tuned["knn"]["best"]))
-    full.fit([p.ex for p in train], seed=seeds[0])
+    full.fit(events_of(train), seed=seeds[0])
     full_outs = evaluate(full, test)
     full_rep = summarize(_filter(full_outs, ["repair"]), n_boot=n_boot)
     full_row = {"method": "knn_full", "capacity": None, "seed": seeds[0], "active_count": full.active_count,
@@ -367,12 +419,8 @@ def run_e2(data: DataBundle, log, seeds: Sequence[int], tuned: dict) -> dict:
                 params = dict(tuned["rvm"]["best"]) if name.startswith("rvm") else dict(tuned["knn"]["best"])
                 m = make_method(name, capacity=cap, seed=seed, params=params)
                 t0 = time.perf_counter()
-                m.fit([p.ex for p in train], seed=seed)
+                m.fit(events_of(train), seed=seed)
                 fit_s = time.perf_counter() - t0
-                # update cost: refit after one more verified event (warm data, cold start)
-                t1 = time.perf_counter()
-                m2 = make_method(name, capacity=cap, seed=seed, params=params)
-                m2.fit([p.ex for p in train[:-1]], seed=seed)
                 update_s = fit_s  # conservative: a full refit is the documented update procedure
                 outs = evaluate(m, test)
                 rep = summarize(_filter(outs, ["repair"]), n_boot=n_boot, seed=seed)
@@ -388,7 +436,7 @@ def run_e2(data: DataBundle, log, seeds: Sequence[int], tuned: dict) -> dict:
             rvm_row = next(r for r in rows if r["method"] == "rvm" and r["capacity"] == cap and r["seed"] == seed)
             bm_cap = max(1, int(rvm_row["bytes"]["total"] // max(1.0, per_proto_bytes)))
             m = make_method("knn_cap", capacity=bm_cap, seed=seed, params=dict(tuned["knn"]["best"]))
-            m.fit([p.ex for p in train], seed=seed)
+            m.fit(events_of(train), seed=seed)
             outs = evaluate(m, test)
             rep = summarize(_filter(outs, ["repair"]), n_boot=n_boot, seed=seed)
             rows.append({"method": "knn_bytes_matched", "capacity": cap, "seed": seed, "active_count": m.active_count, "bytes": m.bytes_breakdown(),
@@ -444,12 +492,12 @@ def _collateral(outs: Sequence[Outcome], seed: int, n_boot: int) -> dict:
     return res
 
 
-def _calibration(outs: Sequence[Outcome]) -> dict:
-    labelled = [o for o in outs if o.label is not None]
+def _calibration(rows: Sequence[tuple[float, int]]) -> dict:
+    labelled = list(rows)
     if len(labelled) < 10:
         return {"n": len(labelled), "note": "fewer than 10 labelled pairs"}
-    p = [min(1.0, max(0.0, o.probability)) for o in labelled]
-    y = [o.label for o in labelled]
+    p = [min(1.0, max(0.0, pr)) for pr, _ in labelled]
+    y = [lab for _, lab in labelled]
     ece = expected_calibration_error(p, y)
     return {"n": len(labelled), "brier": brier_score(p, y), "ece": ece["ece"], "bins": ece["bins"]}
 
@@ -481,12 +529,12 @@ def run_e3(data: DataBundle, log, seeds: Sequence[int], tuned: dict, work_dir: P
     for name in ("rvm", "rvm_noscope", "rvm_nogate", "knn_full", "rules"):
         params = rvm_params if name.startswith("rvm") else (knn_params if name.startswith("knn") else {})
         m = make_method(name, capacity=cap if name.startswith("rvm") else None, seed=seed, params=params)
-        m.fit([p.ex for p in train], seed=seed)
+        m.fit(events_of(train), seed=seed)
         outs = evaluate(m, controls)
         entry = {"collateral": _collateral(outs, seed, n_boot),
                  "collateral_by_kind": {k: _collateral([o for o in outs if o.kind == k], seed, n_boot) for k in CONTROL_KINDS},
                  "train_cluster_controls": _collateral(evaluate(m, train_controls), seed, n_boot) if train_controls else {},
-                 "calibration_test_pairs": _calibration(evaluate(m, test))}
+                 "calibration_test_pairs": _calibration(pair_level(m, test))}
         results["methods"][name] = entry
         log(f"E3[{name}] collateral {entry['collateral']['n_regressions']}/{entry['collateral']['n_base_correct']} "
             f"rate={entry['collateral']['rate']:.4f} wilson95={entry['collateral']['wilson_upper_95']:.4f}")
@@ -497,7 +545,7 @@ def run_e3(data: DataBundle, log, seeds: Sequence[int], tuned: dict, work_dir: P
         paired = [Outcome(o.task_id, o.cluster_id, o.kind, o.subset, base_map[o.task_id].correct, o.correct, True, "rag", o.probability, o.label, o.latency_ms, o.margin, o.lower)
                   for o in rag_outs if o.task_id in base_map]
         results["methods"]["rag"] = {"collateral": _collateral(paired, seed, n_boot)}
-    results["methods"]["base"] = {"calibration_test_pairs": _calibration(evaluate(make_method("base"), test))}
+    results["methods"]["base"] = {"calibration_test_pairs": _calibration(pair_level(make_method("base"), test))}
 
     # 2. sequential verified updates with gated admission, snapshots, retention, rollback
     stream = sorted(train, key=lambda p: (p.ex.timestamp, p.ex.task_id))
@@ -518,7 +566,7 @@ def run_e3(data: DataBundle, log, seeds: Sequence[int], tuned: dict, work_dir: P
     current = make_method("rvm", capacity=cap, seed=seed, params=rvm_params)
     current_state = None
     for ck in checkpoints:
-        events = [p.ex for p in stream[:ck]]
+        events = events_of(stream[:ck])
         admitted, quarantined = [], []
         for e in events:
             ok, why = admit_event(e)
@@ -552,7 +600,7 @@ def run_e3(data: DataBundle, log, seeds: Sequence[int], tuned: dict, work_dir: P
         if first_fixed is None and promote:
             first_fixed, first_train_fixed = fixed_now, train_fixed_now
         row.update({"test_repair": summarize(rep, with_ci=False), "collateral": _collateral(ctl, seed, n_boot),
-                    "calibration": _calibration(outs),
+                    "calibration": _calibration(pair_level(current, test)),
                     "retention_test_fixed": (len(fixed_now & first_fixed) / len(first_fixed)) if first_fixed else float("nan"),
                     "n_first_fixed": len(first_fixed) if first_fixed else 0,
                     "retention_first_events": (len(train_fixed_now & first_train_fixed) / len(first_train_fixed)) if first_train_fixed else float("nan")})
@@ -565,13 +613,13 @@ def run_e3(data: DataBundle, log, seeds: Sequence[int], tuned: dict, work_dir: P
     n_false = int(cfg["eval"].get("false_submissions", 20))
     rng = np.random.default_rng(seed)
     false_events = []
-    for p in rng.choice(stream, size=min(n_false, len(stream)), replace=False):
-        e = p.ex
+    stream_events = events_of(stream)
+    for e in rng.choice(stream_events, size=min(n_false, len(stream_events)), replace=False) if stream_events else []:
         false_events.append(PairExample(**{**asdict_pair(e), "a_pass": True, "b_pass": False, "verified": False, "evidence_hash": ""}))
     false_admitted = sum(1 for e in false_events if admit_event(e)[0])
     # ablation: what would happen without the admission check
     forced = make_method("rvm", capacity=cap, seed=seed, params=rvm_params)
-    forced_events = [p.ex for p in stream] + [PairExample(**{**asdict_pair(e), "verified": True, "evidence_hash": "sha256:forged"}) for e in false_events]
+    forced_events = stream_events + [PairExample(**{**asdict_pair(e), "verified": True, "evidence_hash": "sha256:forged"}) for e in false_events]
     forced.fit(forced_events, seed=seed)
     forced_ctl = evaluate(forced, controls)
     results["false_submissions"] = {"n_submitted": len(false_events), "n_admitted": false_admitted,

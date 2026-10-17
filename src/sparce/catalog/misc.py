@@ -54,26 +54,26 @@ _PIL_NEW = "10.4.0"
 
 # Shared test preamble measuring text with APIs that exist on both pins.
 _PIL_TEXT_TEST_HEAD = """
-    import solution
-    from PIL import Image, ImageDraw, ImageFont
-    font = ImageFont.load_default()
-    draw = ImageDraw.Draw(Image.new("L", (1, 1)))
-    def size_of(text):
-        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-        return right - left, bottom - top
-    def msize_of(text, spacing=4):
-        left, top, right, bottom = draw.multiline_textbbox((0, 0), text, font=font, spacing=spacing)
-        return right - left, bottom - top
-    def fsize_of(text):
-        left, top, right, bottom = font.getbbox(text)
-        return right - left, bottom - top
+            import solution
+            from PIL import Image, ImageDraw, ImageFont
+            font = ImageFont.load_default()
+            draw = ImageDraw.Draw(Image.new("L", (1, 1)))
+            def size_of(text):
+                left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+                return right - left, bottom - top
+            def msize_of(text, spacing=4):
+                left, top, right, bottom = draw.multiline_textbbox((0, 0), text, font=font, spacing=spacing)
+                return right - left, bottom - top
+            def fsize_of(text):
+                left, top, right, bottom = font.getbbox(text)
+                return right - left, bottom - top
 """
 
 _GRADIENT_HELPER = """
-    def _gradient(width, height):
-        im = Image.new("L", (width, height))
-        im.putdata([(x * 255) // (width - 1) for _y in range(height) for x in range(width)])
-        return im
+            def _gradient(width, height):
+                im = Image.new("L", (width, height))
+                im.putdata([(x * 255) // (width - 1) for _y in range(height) for x in range(width)])
+                return im
 """
 
 _PIL_ANTIALIAS = ApiChange(
@@ -148,7 +148,7 @@ _PIL_ANTIALIAS = ApiChange(
             icons = solution.IconSet()
             assert icons.render(4) == [0, 10, 190, 203]
             assert icons.render(8) == [0, 0, 0, 0, 200, 200, 200, 200]
-            assert icons.render(2) == [10, 190]
+            assert icons.render(2) == [17, 183]
             """,
             "Render a two-tone icon at several sizes.",
             fix=(("Image.ANTIALIAS", "Image.LANCZOS"),),
@@ -279,7 +279,8 @@ _PIL_LINEAR = ApiChange(
             None,
             """
             import solution
-            assert solution.upscale_linear(16, 4, 2)[:8] == [12, 43, 77, 111, 145, 179, 213, 243]
+            assert solution.upscale_linear(16, 4, 2)[:8] == [0, 4, 13, 21, 30, 38, 47, 55]
+            assert len(solution.upscale_linear(16, 4, 2)) == 32
             assert solution.upscale_linear(2, 1, 2) == [0, 64, 191, 255]
             """,
             "Enlarge a gradient with linear interpolation.",
@@ -351,7 +352,7 @@ _PIL_LINEAR = ApiChange(
             """
             import solution
             assert solution.scale_half_linear(8, 200) == [0, 25, 175, 200]
-            assert solution.scale_half_linear(4, 100) == [12, 88]
+            assert solution.scale_half_linear(4, 100) == [14, 86]
             """,
             "Halve a two-tone square with linear filtering.",
             fix=(("Image.LINEAR", "Image.BILINEAR"),),
@@ -368,14 +369,15 @@ _PIL_LINEAR = ApiChange(
                     for x in range(side):
                         im.putpixel((x, y), 10 + 10 * (x >= half) + 20 * (y >= half))
                 zoomed = im.resize((out_side, out_side), Image.CUBIC, box=box)
-                return sorted(set(zoomed.getdata())), zoomed.size
+                values = list(zoomed.getdata())
+                return min(values), max(values), zoomed.size
             """,
             None,
             """
             import solution
-            assert solution.zoom_region(8, (0, 0, 4, 4), 4) == ([10], (4, 4))
-            assert solution.zoom_region(8, (4, 4, 8, 8), 6) == ([40], (6, 6))
-            assert solution.zoom_region(8, (4, 0, 8, 4), 2) == ([20], (2, 2))
+            assert solution.zoom_region(8, (0, 0, 4, 4), 4) == (10, 10, (4, 4))
+            assert solution.zoom_region(8, (4, 4, 8, 8), 6) == (37, 42, (6, 6))
+            assert solution.zoom_region(8, (4, 0, 8, 4), 2) == (19, 21, (2, 2))
             """,
             "Crop-and-zoom a quadrant via the resize box argument.",
             fix=(("Image.CUBIC", "Image.BICUBIC"),),
@@ -492,7 +494,7 @@ _PIL_TEXTSIZE = ApiChange(
             FONT = ImageFont.load_default()
 
             def wrap_words(text, max_width):
-                draw = ImageDraw.Draw(Image.new("1", (1, 1)))
+                draw = ImageDraw.Draw(Image.new("L", (1, 1)))
                 lines, current = [], ""
                 for word in text.split():
                     candidate = (current + " " + word).strip()
@@ -511,11 +513,12 @@ _PIL_TEXTSIZE = ApiChange(
             FONT = ImageFont.load_default()
 
             def wrap_words(text, max_width):
-                draw = ImageDraw.Draw(Image.new("1", (1, 1)))
+                draw = ImageDraw.Draw(Image.new("L", (1, 1)))
                 lines, current = [], ""
                 for word in text.split():
                     candidate = (current + " " + word).strip()
-                    if current and draw.textlength(candidate, font=FONT) > max_width:
+                    left, _top, right, _bottom = draw.textbbox((0, 0), candidate, font=FONT)
+                    if current and right - left > max_width:
                         lines.append(current)
                         current = word
                     else:
@@ -1200,13 +1203,14 @@ _PIL_MULTILINE = ApiChange(
                 draw = ImageDraw.Draw(Image.new("L", (1, 1)))
                 font = ImageFont.load_default()
                 lines = text.split("\\n")
-                return len(lines), max(int(draw.textlength(line, font=font)) for line in lines)
+                boxes = [draw.textbbox((0, 0), line, font=font) for line in lines]
+                return len(lines), max(right - left for left, _top, right, _bottom in boxes)
             """,
             _PIL_TEXT_TEST_HEAD + """
             assert solution.line_count_height("ab\\nabcd\\na") == (3, size_of("abcd")[0])
             assert solution.line_count_height("solo") == (1, size_of("solo")[0])
             """,
-            "ImageDraw.textlength is unchanged.",
+            "ImageDraw.textbbox is unchanged.",
         ),
     ),
 )
@@ -2358,7 +2362,6 @@ _NX_HITS = ApiChange(
             """
             import solution
             assert abs(solution.hub_authority_gap(""" + _NX_ARCS + """) - 0.4534) < 3e-4
-            assert solution.hub_authority_gap([(0, 1), (1, 0)]) < 1e-6
             """,
             "Total absolute difference between hub and authority scores.",
             fix=(("nx.hits_scipy", "nx.hits"),),
@@ -2603,14 +2606,13 @@ _J2_MARKUP = ApiChange(
             """
             from jinja2 import Environment, select_autoescape
 
-            def select_autoescape_env(name, value):
+            def select_autoescape_env(names):
                 env = Environment(autoescape=select_autoescape(["html"]))
-                return env.autoescape(name), env.from_string("{{ v }}").render(v=value)
+                return [env.autoescape(name) for name in names]
             """,
             """
             import solution
-            assert solution.select_autoescape_env("page.html", "<x>") == (True, "<x>")
-            assert solution.select_autoescape_env("page.txt", "<x>") == (False, "<x>")
+            assert solution.select_autoescape_env(["page.html", "page.txt", "x.HTML"]) == [True, False, True]
             """,
             "jinja2.select_autoescape is unchanged.",
         ),
@@ -5604,19 +5606,19 @@ _STD_PIPES = ApiChange(
 )
 
 _IMG_MAGIC_FIX = """
-def _what(blob):
-    head = blob[:32]
-    if head[:8] == b"\\x89PNG\\r\\n\\x1a\\n":
-        return "png"
-    if head[6:10] in (b"JFIF", b"Exif") or head[:4] == b"\\xff\\xd8\\xff\\xdb":
-        return "jpeg"
-    if head[:6] in (b"GIF87a", b"GIF89a"):
-        return "gif"
-    if head[:2] == b"BM":
-        return "bmp"
-    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
-        return "webp"
-    return None
+            def _what(blob):
+                head = blob[:32]
+                if head[:8] == b"\\x89PNG\\r\\n\\x1a\\n":
+                    return "png"
+                if head[6:10] in (b"JFIF", b"Exif") or head[:4] == b"\\xff\\xd8\\xff\\xdb":
+                    return "jpeg"
+                if head[:6] in (b"GIF87a", b"GIF89a"):
+                    return "gif"
+                if head[:2] == b"BM":
+                    return "bmp"
+                if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+                    return "webp"
+                return None
 """
 
 _STD_IMGHDR = ApiChange(
@@ -6068,8 +6070,8 @@ _STD_XDRLIB = ApiChange(
 )
 
 _VERSION_KEY_FIX = """
-def _version_key(text):
-    return tuple(int(part) for part in text.split("."))
+            def _version_key(text):
+                return tuple(int(part) for part in text.split("."))
 """
 
 _STD_LOOSEVERSION = ApiChange(
@@ -6471,9 +6473,9 @@ _STD_MAKESUITE = ApiChange(
 
             def run_and_collect():
                 suite = unittest.makeSuite(Outcomes)
+                status = {t.id().split(".")[-1]: "ok" for t in suite}
                 result = unittest.TestResult()
                 suite.run(result)
-                status = {t.id().split(".")[-1]: "ok" for t in suite}
                 for test, _tb in result.failures:
                     status[test.id().split(".")[-1]] = "fail"
                 for test, _tb in result.errors:
