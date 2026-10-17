@@ -34,9 +34,12 @@ class Logger:
 
 def _git(*args: str) -> str:
     try:
-        return subprocess.run(["git", *args], capture_output=True, text=True, timeout=10).stdout.strip()
+        out = subprocess.run(["git", *args], capture_output=True, text=True, timeout=10).stdout.strip()
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        return "unknown"
+        out = ""
+    if not out and args and args[0] == "rev-parse":
+        return os.environ.get("SPARCE_GIT_SHA", "unknown")
+    return out
 
 
 def _sha256_file(path: Path) -> str:

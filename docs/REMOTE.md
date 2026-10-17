@@ -54,7 +54,17 @@ ssh -N -L 5000:127.0.0.1:5000 sparce-gpu
 
 If UFW is already enabled, retain SSH ingress access (`sudo ufw allow OpenSSH`) before changing it; only change firewall rules with an out-of-band recovery path. This repository does not modify UFW.
 
-## 4. Start suite after agent implementation
+## 4. Start the suite
+
+Checked on the actual host (2026-10-17): Ubuntu 26.04, NVIDIA RTX A4000 16 GB, driver 595.71.05 (CUDA 13.2), torch 2.14.1+cu130 from `uv sync --extra gpu`, docker 29 for the sandbox (no NVIDIA container toolkit needed: the verifier is CPU-only). Model and embedding revisions are pinned in `configs/a4000.toml`; pre-download them with `huggingface_hub.snapshot_download(repo, revision=...)` and run with `HF_HUB_OFFLINE=1`. Measured generation throughput: batch 12 → ~240 tok/s, 6.6 GB peak reserved VRAM.
+
+Pilot (subset of clusters, separate work dir):
+
+```bash
+uv run sparce run-suite --config configs/a4000.toml --work-dir runs/pilot --limit-clusters 30
+```
+
+## 4b. Start suite after agent implementation
 
 ```bash
 bash scripts/start_experiments.sh

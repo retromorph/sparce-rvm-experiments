@@ -1,6 +1,6 @@
 # SPaRCE-RVM Experiments
 
-**Status: starter repository, not completed LLM experiments.** Tested core inherited Laplace-ARD RVM implementation + policy + SQLite snapshot ledger; CPU synthetic smoke test only. The coding agent must implement the verified coding harness, frozen LLM integration, baselines, and the three go/no-go studies described below.
+**Status: end-to-end PoC suite implemented (2026-10-17).** `uv run sparce run-suite --config configs/a4000.toml` builds the executable benchmark, generates and scores candidates with the frozen LLM on the GPU, verifies every candidate in an isolated Docker sandbox, and runs E1/E2/E3 with MLflow tracking and a generated report (`reports/generated/SPARCE_POC_REPORT.md`). Results and decisions live in the report; nothing here claims production readiness.
 
 SPaRCE = **S**parse **P**robabilistic **R**elevance **C**orrective **E**xperiences: external, scoped corrections for a frozen coding model. Instead of retaining every mistake, learn a small set of relevance vectors using approximate empirical-Bayes automatic relevance determination (ARD), conservatively activate only in validated contexts, and keep versioned reversible snapshots.
 
@@ -32,6 +32,21 @@ The first `uv sync` creates `uv.lock`; **commit the generated lockfile** for ful
 Run `scripts/start_mlflow.sh` on the remote machine to start the **loopback-only** MLflow server under `tmux`. Run `scripts/start_experiments.sh` to start `tmux` experiment orchestration once `run-suite` has been implemented by the coding agent. Tunnel the MLflow UI with `ssh -N -L 5000:127.0.0.1:5000 YOUR_SSH_ALIAS`; browse `http://127.0.0.1:5000` locally. **Do not open TCP/5000 to the internet.** See [`docs/REMOTE.md`](docs/REMOTE.md) for commands, UFW guidance and configuration.
 
 Reference model: `Qwen/Qwen2.5-Coder-3B-Instruct`, batch size 1, 2 candidates, max input tokens 2048, 256 new tokens; checkpoint/dtype choices must be validated against real GPU and model card. A4000 is 16GB VRAM; leave space for runtime, KV cache and embeddings. Use GPU memory guard and record observed peak VRAM. CPU PyTorch or GPU dependency choices are controlled by `uv sync --extra gpu`; verify CUDA compatibility explicitly.
+
+## Real pipeline (implemented)
+
+| Module | Role |
+| --- | --- |
+| `src/sparce/catalog/` | first-party catalog of real, documented breaking API changes with executable programs + sibling controls |
+| `src/sparce/dataset.py` | task instances (repair / previously_correct / old_version / near_api), variants, simulated stream timestamps, chronological + held-out-family cluster splits, leakage audit, public/hidden records |
+| `src/sparce/environments.py`, `sandbox.py` | pinned Docker images; network-disabled, non-root, read-only, quota-limited batched execution of untrusted code |
+| `src/sparce/llm.py` | frozen Qwen2.5-Coder adapter: greedy + seeded sampled candidates, length-normalised log-likelihood scores |
+| `src/sparce/embedding.py` | pinned MiniLM joint (request, candidate) embeddings on the edit diff |
+| `src/sparce/memory.py` | scoped ARD-RVM (+ no-scope / no-gate ablations), full/capacity kNN, random, medoids, version rules |
+| `src/sparce/rag.py` | pinned-version API-inventory retrieval baseline (generator) |
+| `src/sparce/pipeline.py`, `analysis.py`, `suite.py`, `report.py` | resumable stages, E1/E2/E3 statistics, MLflow/plots, report |
+
+Stages: `prepare → generate → verify → embed → analyze → report`; every stage caches per item under `runs/<name>/cache` and `--resume` continues safely. `uv run sparce summarize` regenerates analysis/report from caches. CPU CI runs the suite end to end with fake LLM/embedder/sandbox (`tests/test_suite_cpu.py`).
 
 ## Source tree
 

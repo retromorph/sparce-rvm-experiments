@@ -60,7 +60,7 @@ RUNNER_SOURCE = textwrap.dedent(
             results[job] = rec; continue
         start = time.perf_counter()
         try:
-            proc = subprocess.run([sys.executable, "-I", "-B", "-W", "ignore", "test_solution.py"], cwd=work,
+            proc = subprocess.run([sys.executable, "-E", "-s", "-B", "-W", "ignore", "test_solution.py"], cwd=work,
                                   capture_output=True, text=True, timeout=timeout, preexec_fn=limits,
                                   env={"PYTHONHASHSEED": "0", "PATH": os.environ.get("PATH", ""), "HOME": work,
                                        "MPLBACKEND": "Agg", "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"})
