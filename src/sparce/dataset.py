@@ -154,6 +154,21 @@ def rename_identifiers(code: str, test_code: str, seed: str, protected_extra: It
         mapping[name] = new
         taken.add(new)
 
+    # attributes defined by the module itself (methods, self.<attr>, class-level annotated fields):
+    # tests access them through instances, so those attribute names must be renamed too.
+    defined_attrs: set[str] = set()
+    for i, t in enumerate(toks):
+        if t.type != tokenize.NAME:
+            continue
+        prev = toks[i - 1] if i > 0 else None
+        nxt = toks[i + 1] if i + 1 < len(toks) else None
+        if prev is not None and prev.string == "def":
+            defined_attrs.add(t.string)
+        if i >= 2 and prev is not None and prev.string == "." and toks[i - 2].string in ("self", "cls"):
+            defined_attrs.add(t.string)
+        if prev is not None and prev.type in (tokenize.INDENT, tokenize.NEWLINE, tokenize.NL) and nxt is not None and nxt.string == ":":
+            defined_attrs.add(t.string)
+
     def apply(src: str, module_attr: bool) -> str:
         out = []
         ts = list(tokenize.generate_tokens(io.StringIO(src).readline))
@@ -164,7 +179,7 @@ def rename_identifiers(code: str, test_code: str, seed: str, protected_extra: It
                 is_attr = prev is not None and prev.type == tokenize.OP and prev.string == "."
                 if not is_attr:
                     s = mapping[s]
-                elif module_attr and i >= 2 and ts[i - 2].string == "solution":
+                elif (module_attr and i >= 2 and ts[i - 2].string == "solution") or s in defined_attrs:
                     s = mapping[s]
             out.append(t._replace(string=s))
         return tokenize.untokenize(out)

@@ -3462,7 +3462,7 @@ _PYD_REGEX = ApiChange(
                     pass
             """,
             "User record with username and e-mail patterns.",
-            fix=(("regex=", "pattern="), ("regex=", "pattern=")),
+            fix=(("regex=", "pattern="),),
         ),
         _p(
             "count_valid_colors",
@@ -5196,3 +5196,1718 @@ _PYD_CONLIST = ApiChange(
         ),
     ),
 )
+
+
+# ---------------------------------------------------------------------------
+# Python standard library 3.11 -> 3.13
+# ---------------------------------------------------------------------------
+
+_PY313_URL = "https://docs.python.org/3/whatsnew/3.13.html#removed-modules"
+_PY313_DATE = "2024-10-07"
+_PY312_URL = "https://docs.python.org/3/whatsnew/3.12.html#removed"
+_PY312_DATE = "2023-10-02"
+_PY_OLD = "3.11"
+_PY_NEW = "3.13"
+
+_STD_CGI = ApiChange(
+    package="python",
+    api_family="cgi.parse_header",
+    old_api="cgi.parse_header",
+    new_api="email.message.Message.get_params / get_param",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY313_DATE,
+    change_url=_PY313_URL,
+    summary="Python 3.13 removed the cgi module (PEP 594); parse header parameters with email.message.Message instead.",
+    programs=(
+        _p(
+            "content_charset",
+            """
+            import cgi
+
+            def content_charset(header, default="utf-8"):
+                _value, params = cgi.parse_header(header)
+                return params.get("charset", default).lower()
+            """,
+            """
+            from email.message import Message
+
+            def content_charset(header, default="utf-8"):
+                msg = Message()
+                msg["content-type"] = header
+                return (msg.get_param("charset") or default).lower()
+            """,
+            """
+            import solution
+            assert solution.content_charset("text/html; charset=UTF-8") == "utf-8"
+            assert solution.content_charset("text/html") == "utf-8"
+            assert solution.content_charset("application/json; charset=latin-1", "ascii") == "latin-1"
+            assert solution.content_charset('text/plain; charset="iso-8859-2"') == "iso-8859-2"
+            """,
+            "Charset parameter of a Content-Type header.",
+        ),
+        _p(
+            "mime_type",
+            """
+            import cgi
+
+            def mime_type(header):
+                value, _params = cgi.parse_header(header)
+                main, _sep, sub = value.partition("/")
+                return main.lower(), sub.lower()
+            """,
+            """
+            from email.message import Message
+
+            def mime_type(header):
+                msg = Message()
+                msg["content-type"] = header
+                return msg.get_content_maintype(), msg.get_content_subtype()
+            """,
+            """
+            import solution
+            assert solution.mime_type("Text/HTML; charset=utf-8") == ("text", "html")
+            assert solution.mime_type("application/json") == ("application", "json")
+            assert solution.mime_type("image/svg+xml; q=0.9") == ("image", "svg+xml")
+            """,
+            "Main and sub type of a Content-Type header.",
+        ),
+        _p(
+            "disposition_filename",
+            """
+            import cgi
+
+            def disposition_filename(header):
+                kind, params = cgi.parse_header(header)
+                return kind, params.get("filename")
+            """,
+            """
+            from email.message import Message
+
+            def disposition_filename(header):
+                msg = Message()
+                msg["content-disposition"] = header
+                kind = msg.get_params(header="content-disposition")[0][0]
+                return kind, msg.get_param("filename", header="content-disposition")
+            """,
+            """
+            import solution
+            assert solution.disposition_filename('attachment; filename="report.pdf"') == ("attachment", "report.pdf")
+            assert solution.disposition_filename("inline") == ("inline", None)
+            assert solution.disposition_filename('form-data; name="f"; filename=a.txt') == ("form-data", "a.txt")
+            """,
+            "Disposition kind and filename of a Content-Disposition header.",
+        ),
+        _p(
+            "multipart_boundary",
+            """
+            import cgi
+
+            class FormParser:
+                def __init__(self, content_type):
+                    self.kind, self.params = cgi.parse_header(content_type)
+
+                def boundary(self):
+                    if self.kind != "multipart/form-data":
+                        return None
+                    return self.params.get("boundary")
+
+                def split_parts(self, body):
+                    marker = "--" + self.boundary()
+                    return [p.strip() for p in body.split(marker) if p.strip() and p.strip() != "--"]
+            """,
+            """
+            from email.message import Message
+
+            class FormParser:
+                def __init__(self, content_type):
+                    msg = Message()
+                    msg["content-type"] = content_type
+                    self.kind = msg.get_content_type()
+                    self.params = dict(msg.get_params()[1:])
+
+                def boundary(self):
+                    if self.kind != "multipart/form-data":
+                        return None
+                    return self.params.get("boundary")
+
+                def split_parts(self, body):
+                    marker = "--" + self.boundary()
+                    return [p.strip() for p in body.split(marker) if p.strip() and p.strip() != "--"]
+            """,
+            """
+            import solution
+            fp = solution.FormParser("multipart/form-data; boundary=XyZ")
+            assert fp.boundary() == "XyZ"
+            assert fp.split_parts("--XyZ\\npart one\\n--XyZ\\npart two\\n--XyZ--") == ["part one", "part two"]
+            assert solution.FormParser("text/plain").boundary() is None
+            """,
+            "Multipart boundary extraction and body splitting.",
+        ),
+        _p(
+            "header_params",
+            """
+            import cgi
+
+            def header_params(header):
+                _value, params = cgi.parse_header(header)
+                return sorted(params.items())
+            """,
+            """
+            from email.message import Message
+
+            def header_params(header):
+                msg = Message()
+                msg["content-type"] = header
+                return sorted(msg.get_params()[1:])
+            """,
+            """
+            import solution
+            assert solution.header_params("text/plain; charset=utf-8; format=flowed") == [("charset", "utf-8"), ("format", "flowed")]
+            assert solution.header_params("text/plain") == []
+            assert solution.header_params('a/b; x="1 2"') == [("x", "1 2")]
+            """,
+            "Sorted parameter pairs of a header value.",
+        ),
+        _p(
+            "is_json",
+            """
+            import cgi
+
+            def is_json(header):
+                value, _params = cgi.parse_header(header or "")
+                value = value.lower()
+                return value == "application/json" or value.endswith("+json")
+            """,
+            """
+            from email.message import Message
+
+            def is_json(header):
+                msg = Message()
+                msg["content-type"] = header or ""
+                value = msg.get_content_type()
+                return value == "application/json" or value.endswith("+json")
+            """,
+            """
+            import solution
+            assert solution.is_json("application/json; charset=utf-8") is True
+            assert solution.is_json("Application/JSON") is True
+            assert solution.is_json("application/vnd.api+json") is True
+            assert solution.is_json("text/html") is False
+            """,
+            "Whether a Content-Type denotes JSON.",
+        ),
+    ),
+    siblings=(
+        _s(
+            "parse_mailbox",
+            """
+            from email.utils import parseaddr
+
+            def parse_mailbox(value):
+                name, addr = parseaddr(value)
+                return name, addr.lower()
+            """,
+            """
+            import solution
+            assert solution.parse_mailbox("Ann <Ann@Example.org>") == ("Ann", "ann@example.org")
+            assert solution.parse_mailbox("bob@example.org") == ("", "bob@example.org")
+            """,
+            "email.utils.parseaddr is unchanged.",
+        ),
+        _s(
+            "guess_mime",
+            """
+            import mimetypes
+
+            def guess_mime(filename):
+                kind, _encoding = mimetypes.guess_type(filename)
+                return kind or "application/octet-stream"
+            """,
+            """
+            import solution
+            assert solution.guess_mime("a.png") == "image/png"
+            assert solution.guess_mime("a.json") == "application/json"
+            assert solution.guess_mime("a.unknownext") == "application/octet-stream"
+            """,
+            "mimetypes.guess_type is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_STD_PIPES = ApiChange(
+    package="python",
+    api_family="pipes.quote",
+    old_api="pipes.quote",
+    new_api="shlex.quote",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY313_DATE,
+    change_url=_PY313_URL,
+    summary="Python 3.13 removed the pipes module (PEP 594); use shlex.quote.",
+    programs=(
+        _p(
+            "build_command",
+            """
+            from pipes import quote
+
+            def build_command(program, args):
+                return " ".join([quote(program)] + [quote(a) for a in args])
+            """,
+            None,
+            """
+            import solution
+            assert solution.build_command("ls", ["-l", "my dir"]) == "ls -l 'my dir'"
+            assert solution.build_command("echo", ["it's"]) == "echo 'it'\\"'\\"'s'"
+            assert solution.build_command("true", []) == "true"
+            """,
+            "Join a program and arguments into a shell-safe line.",
+            fix=(("from pipes import quote", "from shlex import quote"),),
+        ),
+        _p(
+            "echo_line",
+            """
+            import pipes
+
+            def echo_line(message):
+                return "echo " + pipes.quote(message)
+            """,
+            None,
+            """
+            import solution
+            assert solution.echo_line("hello") == "echo hello"
+            assert solution.echo_line("hello world") == "echo 'hello world'"
+            assert solution.echo_line("$HOME") == "echo '$HOME'"
+            """,
+            "Quote a message for echo.",
+            fix=(("import pipes", "import shlex"), ("pipes.quote", "shlex.quote")),
+        ),
+        _p(
+            "shell_script",
+            """
+            from pipes import quote
+
+            class ShellScript:
+                def __init__(self):
+                    self.lines = ["#!/bin/sh"]
+
+                def add(self, *argv):
+                    self.lines.append(" ".join(quote(a) for a in argv))
+                    return self
+
+                def render(self):
+                    return "\\n".join(self.lines) + "\\n"
+            """,
+            None,
+            """
+            import solution
+            script = solution.ShellScript().add("mkdir", "-p", "out dir").add("cp", "a.txt", "out dir/")
+            assert script.render() == "#!/bin/sh\\nmkdir -p 'out dir'\\ncp a.txt 'out dir/'\\n"
+            assert solution.ShellScript().render() == "#!/bin/sh\\n"
+            """,
+            "Accumulate quoted commands into a shell script.",
+            fix=(("from pipes import quote", "from shlex import quote"),),
+        ),
+        _p(
+            "env_assignments",
+            """
+            import pipes
+
+            def env_assignments(env):
+                return " ".join("%s=%s" % (k, pipes.quote(v)) for k, v in sorted(env.items()))
+            """,
+            None,
+            """
+            import solution
+            assert solution.env_assignments({"B": "two words", "A": "x"}) == "A=x B='two words'"
+            assert solution.env_assignments({}) == ""
+            """,
+            "Render environment variable assignments.",
+            fix=(("import pipes", "import shlex"), ("pipes.quote", "shlex.quote")),
+        ),
+        _p(
+            "quote_paths",
+            """
+            from pipes import quote
+
+            def quote_paths(paths):
+                return [quote(p) for p in paths]
+
+            def rm_command(paths):
+                return "rm -f " + " ".join(quote_paths(paths))
+            """,
+            None,
+            """
+            import solution
+            assert solution.quote_paths(["a.txt", "b c.txt"]) == ["a.txt", "'b c.txt'"]
+            assert solution.rm_command(["x", "y z"]) == "rm -f x 'y z'"
+            """,
+            "Quote file paths for a removal command.",
+            fix=(("from pipes import quote", "from shlex import quote"),),
+        ),
+        _p(
+            "pipeline_string",
+            """
+            import pipes
+
+            def pipeline_string(stages):
+                rendered = []
+                for argv in stages:
+                    rendered.append(" ".join(pipes.quote(a) for a in argv))
+                return " | ".join(rendered)
+            """,
+            None,
+            """
+            import solution
+            assert solution.pipeline_string([["cat", "my file"], ["grep", "a|b"]]) == "cat 'my file' | grep 'a|b'"
+            assert solution.pipeline_string([["ls"]]) == "ls"
+            """,
+            "Render a shell pipeline from argument vectors.",
+            fix=(("import pipes", "import shlex"), ("pipes.quote", "shlex.quote")),
+        ),
+    ),
+    siblings=(
+        _s(
+            "split_argv",
+            """
+            import shlex
+
+            def split_argv(line):
+                return shlex.split(line)
+            """,
+            """
+            import solution
+            assert solution.split_argv("ls -l 'my dir'") == ["ls", "-l", "my dir"]
+            assert solution.split_argv('echo "a b" c') == ["echo", "a b", "c"]
+            """,
+            "shlex.split is unchanged.",
+        ),
+        _s(
+            "join_argv",
+            """
+            import shlex
+
+            def join_argv(argv):
+                return shlex.join(argv)
+            """,
+            """
+            import solution
+            assert solution.join_argv(["ls", "-l", "my dir"]) == "ls -l 'my dir'"
+            """,
+            "shlex.join is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_IMG_MAGIC_FIX = """
+def _what(blob):
+    head = blob[:32]
+    if head[:8] == b"\\x89PNG\\r\\n\\x1a\\n":
+        return "png"
+    if head[6:10] in (b"JFIF", b"Exif") or head[:4] == b"\\xff\\xd8\\xff\\xdb":
+        return "jpeg"
+    if head[:6] in (b"GIF87a", b"GIF89a"):
+        return "gif"
+    if head[:2] == b"BM":
+        return "bmp"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "webp"
+    return None
+"""
+
+_STD_IMGHDR = ApiChange(
+    package="python",
+    api_family="imghdr.what",
+    old_api="imghdr.what(None, h=blob)",
+    new_api="manual magic-number detection",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY313_DATE,
+    change_url=_PY313_URL,
+    summary="Python 3.13 removed the imghdr module (PEP 594); detect image formats from their magic bytes instead.",
+    programs=(
+        _p(
+            "detect_format",
+            """
+            import imghdr
+
+            def detect_format(blob):
+                return imghdr.what(None, h=blob)
+            """,
+            _IMG_MAGIC_FIX + """
+            def detect_format(blob):
+                return _what(blob)
+            """,
+            """
+            import solution
+            PNG = b"\\x89PNG\\r\\n\\x1a\\n" + b"\\0" * 24
+            JPG = b"\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00" + b"\\0" * 20
+            GIF = b"GIF89a" + b"\\0" * 26
+            assert solution.detect_format(PNG) == "png"
+            assert solution.detect_format(JPG) == "jpeg"
+            assert solution.detect_format(GIF) == "gif"
+            assert solution.detect_format(b"not an image at all, just text") is None
+            """,
+            "Image format name from a byte buffer.",
+        ),
+        _p(
+            "count_by_format",
+            """
+            import imghdr
+            from collections import Counter
+
+            def count_by_format(blobs):
+                counts = Counter(imghdr.what(None, h=b) or "unknown" for b in blobs)
+                return dict(sorted(counts.items()))
+            """,
+            _IMG_MAGIC_FIX + """
+            from collections import Counter
+
+            def count_by_format(blobs):
+                counts = Counter(_what(b) or "unknown" for b in blobs)
+                return dict(sorted(counts.items()))
+            """,
+            """
+            import solution
+            PNG = b"\\x89PNG\\r\\n\\x1a\\n" + b"\\0" * 24
+            GIF = b"GIF87a" + b"\\0" * 26
+            BMP = b"BM" + b"\\0" * 30
+            assert solution.count_by_format([PNG, GIF, PNG, b"zzzz" * 8, BMP]) == {"bmp": 1, "gif": 1, "png": 2, "unknown": 1}
+            assert solution.count_by_format([]) == {}
+            """,
+            "Histogram of detected image formats.",
+        ),
+        _p(
+            "is_image",
+            """
+            import imghdr
+
+            def is_image(blob):
+                return imghdr.what(None, h=blob) is not None
+            """,
+            _IMG_MAGIC_FIX + """
+            def is_image(blob):
+                return _what(blob) is not None
+            """,
+            """
+            import solution
+            assert solution.is_image(b"\\x89PNG\\r\\n\\x1a\\n" + b"\\0" * 24) is True
+            assert solution.is_image(b"RIFF\\x00\\x00\\x00\\x00WEBPVP8 " + b"\\0" * 16) is True
+            assert solution.is_image(b"<html></html>" + b" " * 20) is False
+            assert solution.is_image(b"") is False
+            """,
+            "Whether a buffer starts with a known image signature.",
+        ),
+        _p(
+            "image_sniffer",
+            """
+            import imghdr
+
+            class ImageSniffer:
+                def __init__(self, allowed):
+                    self.allowed = set(allowed)
+                    self.rejected = 0
+
+                def accept(self, blob):
+                    kind = imghdr.what(None, h=blob)
+                    if kind in self.allowed:
+                        return kind
+                    self.rejected += 1
+                    return None
+            """,
+            _IMG_MAGIC_FIX + """
+            class ImageSniffer:
+                def __init__(self, allowed):
+                    self.allowed = set(allowed)
+                    self.rejected = 0
+
+                def accept(self, blob):
+                    kind = _what(blob)
+                    if kind in self.allowed:
+                        return kind
+                    self.rejected += 1
+                    return None
+            """,
+            """
+            import solution
+            PNG = b"\\x89PNG\\r\\n\\x1a\\n" + b"\\0" * 24
+            JPG = b"\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00" + b"\\0" * 20
+            GIF = b"GIF89a" + b"\\0" * 26
+            sniff = solution.ImageSniffer({"png", "jpeg"})
+            assert sniff.accept(PNG) == "png"
+            assert sniff.accept(JPG) == "jpeg"
+            assert sniff.accept(GIF) is None
+            assert sniff.accept(b"\\0" * 32) is None
+            assert sniff.rejected == 2
+            """,
+            "Accept only whitelisted image formats.",
+        ),
+        _p(
+            "extension_for",
+            """
+            import imghdr
+
+            EXT = {"jpeg": ".jpg", "png": ".png", "gif": ".gif", "bmp": ".bmp", "webp": ".webp"}
+
+            def extension_for(blob, fallback=".bin"):
+                return EXT.get(imghdr.what(None, h=blob), fallback)
+            """,
+            _IMG_MAGIC_FIX + """
+            EXT = {"jpeg": ".jpg", "png": ".png", "gif": ".gif", "bmp": ".bmp", "webp": ".webp"}
+
+            def extension_for(blob, fallback=".bin"):
+                return EXT.get(_what(blob), fallback)
+            """,
+            """
+            import solution
+            assert solution.extension_for(b"\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00" + b"\\0" * 20) == ".jpg"
+            assert solution.extension_for(b"BM" + b"\\0" * 30) == ".bmp"
+            assert solution.extension_for(b"\\0" * 32) == ".bin"
+            assert solution.extension_for(b"\\0" * 32, ".dat") == ".dat"
+            """,
+            "File extension for an image buffer.",
+        ),
+        _p(
+            "png_indices",
+            """
+            import imghdr
+
+            def png_indices(blobs):
+                return [i for i, b in enumerate(blobs) if imghdr.what(None, h=b) == "png"]
+            """,
+            _IMG_MAGIC_FIX + """
+            def png_indices(blobs):
+                return [i for i, b in enumerate(blobs) if _what(b) == "png"]
+            """,
+            """
+            import solution
+            PNG = b"\\x89PNG\\r\\n\\x1a\\n" + b"\\0" * 24
+            GIF = b"GIF89a" + b"\\0" * 26
+            assert solution.png_indices([GIF, PNG, b"x" * 32, PNG]) == [1, 3]
+            assert solution.png_indices([]) == []
+            """,
+            "Positions of PNG buffers in a list.",
+        ),
+    ),
+    siblings=(
+        _s(
+            "hex_signature",
+            """
+            import binascii
+
+            def hex_signature(blob, length=4):
+                return binascii.hexlify(blob[:length]).decode("ascii")
+            """,
+            """
+            import solution
+            assert solution.hex_signature(b"\\x89PNG\\r\\n") == "89504e47"
+            assert solution.hex_signature(b"GIF89a", 3) == "474946"
+            """,
+            "binascii.hexlify is unchanged.",
+        ),
+        _s(
+            "mime_for_extension",
+            """
+            import mimetypes
+
+            def mime_for_extension(ext):
+                kind, _enc = mimetypes.guess_type("file" + ext)
+                return kind
+            """,
+            """
+            import solution
+            assert solution.mime_for_extension(".png") == "image/png"
+            assert solution.mime_for_extension(".gif") == "image/gif"
+            """,
+            "mimetypes.guess_type is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_STD_XDRLIB = ApiChange(
+    package="python",
+    api_family="xdrlib",
+    old_api="xdrlib.Packer / xdrlib.Unpacker",
+    new_api="struct.pack / struct.unpack",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY313_DATE,
+    change_url=_PY313_URL,
+    summary="Python 3.13 removed the xdrlib module (PEP 594); encode XDR records with struct instead.",
+    programs=(
+        _p(
+            "pack_record",
+            """
+            import xdrlib
+
+            def pack_record(ident, name, score):
+                p = xdrlib.Packer()
+                p.pack_int(ident)
+                p.pack_string(name.encode("utf-8"))
+                p.pack_double(score)
+                return p.get_buffer()
+            """,
+            """
+            import struct
+
+            def pack_record(ident, name, score):
+                data = name.encode("utf-8")
+                padded = data + b"\\0" * ((4 - len(data) % 4) % 4)
+                return struct.pack(">i", ident) + struct.pack(">I", len(data)) + padded + struct.pack(">d", score)
+            """,
+            """
+            import solution
+            import struct
+            out = solution.pack_record(7, "ab", 1.5)
+            assert out == b"\\x00\\x00\\x00\\x07" + b"\\x00\\x00\\x00\\x02ab\\x00\\x00" + struct.pack(">d", 1.5)
+            assert solution.pack_record(-1, "", 0.0) == b"\\xff\\xff\\xff\\xff" + b"\\x00\\x00\\x00\\x00" + struct.pack(">d", 0.0)
+            assert len(solution.pack_record(1, "abcd", 2.0)) == 4 + 4 + 4 + 8
+            """,
+            "Encode an (int, string, double) record as XDR bytes.",
+        ),
+        _p(
+            "unpack_record",
+            """
+            import xdrlib
+
+            def unpack_record(blob):
+                u = xdrlib.Unpacker(blob)
+                ident = u.unpack_int()
+                name = u.unpack_string().decode("utf-8")
+                score = u.unpack_double()
+                u.done()
+                return ident, name, score
+            """,
+            """
+            import struct
+
+            def unpack_record(blob):
+                ident, length = struct.unpack(">iI", blob[:8])
+                name = blob[8:8 + length].decode("utf-8")
+                offset = 8 + length + (4 - length % 4) % 4
+                (score,) = struct.unpack(">d", blob[offset:offset + 8])
+                if offset + 8 != len(blob):
+                    raise ValueError("trailing data")
+                return ident, name, score
+            """,
+            """
+            import solution
+            import struct
+            blob = b"\\x00\\x00\\x00\\x07" + b"\\x00\\x00\\x00\\x02ab\\x00\\x00" + struct.pack(">d", 1.5)
+            assert solution.unpack_record(blob) == (7, "ab", 1.5)
+            blob2 = b"\\xff\\xff\\xff\\xff" + b"\\x00\\x00\\x00\\x05hello\\x00\\x00\\x00" + struct.pack(">d", -2.25)
+            assert solution.unpack_record(blob2) == (-1, "hello", -2.25)
+            """,
+            "Decode an XDR (int, string, double) record.",
+        ),
+        _p(
+            "encode_int_list",
+            """
+            import xdrlib
+
+            def encode_int_list(values):
+                p = xdrlib.Packer()
+                p.pack_array(values, p.pack_int)
+                return p.get_buffer()
+            """,
+            """
+            import struct
+
+            def encode_int_list(values):
+                return struct.pack(">I", len(values)) + b"".join(struct.pack(">i", v) for v in values)
+            """,
+            """
+            import solution
+            assert solution.encode_int_list([1, -1]) == b"\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x01\\xff\\xff\\xff\\xff"
+            assert solution.encode_int_list([]) == b"\\x00\\x00\\x00\\x00"
+            assert solution.encode_int_list([256]) == b"\\x00\\x00\\x00\\x01\\x00\\x00\\x01\\x00"
+            """,
+            "XDR variable-length array of ints.",
+        ),
+        _p(
+            "xdr_codec",
+            """
+            import xdrlib
+
+            class XdrCodec:
+                def encode(self, flag, count, label):
+                    p = xdrlib.Packer()
+                    p.pack_bool(flag)
+                    p.pack_uint(count)
+                    p.pack_string(label.encode())
+                    return p.get_buffer()
+
+                def decode(self, blob):
+                    u = xdrlib.Unpacker(blob)
+                    return u.unpack_bool(), u.unpack_uint(), u.unpack_string().decode()
+            """,
+            """
+            import struct
+
+            class XdrCodec:
+                def encode(self, flag, count, label):
+                    data = label.encode()
+                    padded = data + b"\\0" * ((4 - len(data) % 4) % 4)
+                    return struct.pack(">iII", 1 if flag else 0, count, len(data)) + padded
+
+                def decode(self, blob):
+                    flag, count, length = struct.unpack(">iII", blob[:12])
+                    return bool(flag), count, blob[12:12 + length].decode()
+            """,
+            """
+            import solution
+            codec = solution.XdrCodec()
+            blob = codec.encode(True, 300, "xyz")
+            assert blob == b"\\x00\\x00\\x00\\x01" + b"\\x00\\x00\\x01\\x2c" + b"\\x00\\x00\\x00\\x03xyz\\x00"
+            assert codec.decode(blob) == (True, 300, "xyz")
+            assert codec.decode(codec.encode(False, 0, "")) == (False, 0, "")
+            """,
+            "Round-trip codec for a (bool, uint, string) triple.",
+        ),
+        _p(
+            "pack_flags",
+            """
+            import xdrlib
+
+            def pack_flags(flags):
+                p = xdrlib.Packer()
+                for flag in flags:
+                    p.pack_bool(flag)
+                return p.get_buffer()
+            """,
+            """
+            import struct
+
+            def pack_flags(flags):
+                return b"".join(struct.pack(">i", 1 if flag else 0) for flag in flags)
+            """,
+            """
+            import solution
+            assert solution.pack_flags([True, False, True]) == b"\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01"
+            assert solution.pack_flags([]) == b""
+            """,
+            "XDR-encode a list of booleans.",
+        ),
+        _p(
+            "decode_strings",
+            """
+            import xdrlib
+
+            def decode_strings(blob):
+                u = xdrlib.Unpacker(blob)
+                out = []
+                while u.get_position() < len(blob):
+                    out.append(u.unpack_string().decode("utf-8"))
+                return out
+            """,
+            """
+            import struct
+
+            def decode_strings(blob):
+                out, pos = [], 0
+                while pos < len(blob):
+                    (length,) = struct.unpack(">I", blob[pos:pos + 4])
+                    pos += 4
+                    out.append(blob[pos:pos + length].decode("utf-8"))
+                    pos += length + (4 - length % 4) % 4
+                return out
+            """,
+            """
+            import solution
+            blob = b"\\x00\\x00\\x00\\x02hi\\x00\\x00" + b"\\x00\\x00\\x00\\x04four" + b"\\x00\\x00\\x00\\x00"
+            assert solution.decode_strings(blob) == ["hi", "four", ""]
+            assert solution.decode_strings(b"") == []
+            """,
+            "Decode consecutive XDR strings.",
+        ),
+    ),
+    siblings=(
+        _s(
+            "struct_header",
+            """
+            import struct
+
+            def struct_header(version, length):
+                return struct.pack(">HI", version, length)
+
+            def parse_header(blob):
+                return struct.unpack(">HI", blob[:6])
+            """,
+            """
+            import solution
+            assert solution.struct_header(2, 300) == b"\\x00\\x02\\x00\\x00\\x01\\x2c"
+            assert solution.parse_header(b"\\x00\\x02\\x00\\x00\\x01\\x2c") == (2, 300)
+            """,
+            "struct.pack/unpack are unchanged.",
+        ),
+        _s(
+            "int_to_bytes",
+            """
+            def int_to_bytes(value, width=4):
+                return value.to_bytes(width, "big", signed=True)
+
+            def bytes_to_int(blob):
+                return int.from_bytes(blob, "big", signed=True)
+            """,
+            """
+            import solution
+            assert solution.int_to_bytes(-1) == b"\\xff\\xff\\xff\\xff"
+            assert solution.bytes_to_int(b"\\x00\\x00\\x01\\x00") == 256
+            """,
+            "int.to_bytes/from_bytes are unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_VERSION_KEY_FIX = """
+def _version_key(text):
+    return tuple(int(part) for part in text.split("."))
+"""
+
+_STD_LOOSEVERSION = ApiChange(
+    package="python",
+    api_family="distutils.version.LooseVersion",
+    old_api="distutils.version.LooseVersion",
+    new_api="tuple(int(p) for p in version.split('.')) (or packaging.version)",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY312_DATE,
+    change_url=_PY312_URL,
+    summary="Python 3.12 removed distutils (PEP 632), so distutils.version.LooseVersion no longer imports; compare numeric version tuples instead.",
+    programs=(
+        _p(
+            "newest_version",
+            """
+            from distutils.version import LooseVersion
+
+            def newest_version(versions):
+                return max(versions, key=LooseVersion)
+            """,
+            _VERSION_KEY_FIX + """
+            def newest_version(versions):
+                return max(versions, key=_version_key)
+            """,
+            """
+            import solution
+            assert solution.newest_version(["1.9.3", "1.10.0", "1.2"]) == "1.10.0"
+            assert solution.newest_version(["0.9", "0.10", "0.9.1"]) == "0.10"
+            assert solution.newest_version(["2.0"]) == "2.0"
+            """,
+            "Highest version string by numeric comparison.",
+        ),
+        _p(
+            "is_compatible",
+            """
+            from distutils.version import LooseVersion
+
+            def is_compatible(current, minimum, below=None):
+                if LooseVersion(current) < LooseVersion(minimum):
+                    return False
+                return below is None or LooseVersion(current) < LooseVersion(below)
+            """,
+            _VERSION_KEY_FIX + """
+            def is_compatible(current, minimum, below=None):
+                if _version_key(current) < _version_key(minimum):
+                    return False
+                return below is None or _version_key(current) < _version_key(below)
+            """,
+            """
+            import solution
+            assert solution.is_compatible("3.11.2", "3.9") is True
+            assert solution.is_compatible("3.8.10", "3.9") is False
+            assert solution.is_compatible("3.12.0", "3.9", below="3.12") is False
+            assert solution.is_compatible("3.11.9", "3.9", below="3.12") is True
+            """,
+            "Check a version against minimum and exclusive upper bounds.",
+        ),
+        _p(
+            "sort_versions",
+            """
+            from distutils.version import LooseVersion
+
+            def sort_versions(versions, reverse=False):
+                return sorted(versions, key=LooseVersion, reverse=reverse)
+            """,
+            _VERSION_KEY_FIX + """
+            def sort_versions(versions, reverse=False):
+                return sorted(versions, key=_version_key, reverse=reverse)
+            """,
+            """
+            import solution
+            assert solution.sort_versions(["1.10", "1.2", "1.9.1", "1.9"]) == ["1.2", "1.9", "1.9.1", "1.10"]
+            assert solution.sort_versions(["1.10", "1.2"], reverse=True) == ["1.10", "1.2"]
+            """,
+            "Sort version strings numerically.",
+        ),
+        _p(
+            "version_gate",
+            """
+            from distutils.version import LooseVersion
+
+            class VersionGate:
+                def __init__(self, required):
+                    self.required = LooseVersion(required)
+                    self.blocked = []
+
+                def allow(self, name, version):
+                    if LooseVersion(version) >= self.required:
+                        return True
+                    self.blocked.append(name)
+                    return False
+            """,
+            _VERSION_KEY_FIX + """
+            class VersionGate:
+                def __init__(self, required):
+                    self.required = _version_key(required)
+                    self.blocked = []
+
+                def allow(self, name, version):
+                    if _version_key(version) >= self.required:
+                        return True
+                    self.blocked.append(name)
+                    return False
+            """,
+            """
+            import solution
+            gate = solution.VersionGate("2.1")
+            assert gate.allow("a", "2.1.0") is True
+            assert gate.allow("b", "2.0.9") is False
+            assert gate.allow("c", "10.0") is True
+            assert gate.blocked == ["b"]
+            """,
+            "Gate plugins on a minimum version.",
+        ),
+        _p(
+            "needs_upgrade",
+            """
+            from distutils.version import LooseVersion
+
+            def needs_upgrade(installed, available):
+                latest = max(available, key=LooseVersion)
+                return LooseVersion(installed) < LooseVersion(latest), latest
+            """,
+            _VERSION_KEY_FIX + """
+            def needs_upgrade(installed, available):
+                latest = max(available, key=_version_key)
+                return _version_key(installed) < _version_key(latest), latest
+            """,
+            """
+            import solution
+            assert solution.needs_upgrade("1.4.2", ["1.4.2", "1.4.10", "1.3.9"]) == (True, "1.4.10")
+            assert solution.needs_upgrade("2.0", ["1.9", "2.0"]) == (False, "2.0")
+            """,
+            "Decide whether a newer release is available.",
+        ),
+        _p(
+            "major_groups",
+            """
+            from distutils.version import LooseVersion
+
+            def major_groups(versions):
+                groups = {}
+                for v in versions:
+                    major = LooseVersion(v).version[0]
+                    groups.setdefault(major, []).append(v)
+                return {k: sorted(vs, key=LooseVersion) for k, vs in sorted(groups.items())}
+            """,
+            _VERSION_KEY_FIX + """
+            def major_groups(versions):
+                groups = {}
+                for v in versions:
+                    major = _version_key(v)[0]
+                    groups.setdefault(major, []).append(v)
+                return {k: sorted(vs, key=_version_key) for k, vs in sorted(groups.items())}
+            """,
+            """
+            import solution
+            out = solution.major_groups(["2.10", "1.3", "2.2", "1.10.1", "3.0"])
+            assert out == {1: ["1.3", "1.10.1"], 2: ["2.2", "2.10"], 3: ["3.0"]}
+            assert solution.major_groups([]) == {}
+            """,
+            "Group versions by major number, sorted within each group.",
+        ),
+    ),
+    siblings=(
+        _s(
+            "sys_version_tuple",
+            """
+            import sys
+
+            def sys_version_tuple():
+                return sys.version_info[0], sys.version_info[0] >= 3
+            """,
+            """
+            import solution
+            assert solution.sys_version_tuple() == (3, True)
+            """,
+            "sys.version_info is unchanged.",
+        ),
+        _s(
+            "platform_python_version",
+            """
+            import platform
+
+            def platform_python_version():
+                parts = platform.python_version_tuple()
+                return int(parts[0]), len(parts)
+            """,
+            """
+            import solution
+            assert solution.platform_python_version() == (3, 3)
+            """,
+            "platform.python_version_tuple is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_STD_MAKESUITE = ApiChange(
+    package="python",
+    api_family="unittest.makeSuite",
+    old_api="unittest.makeSuite(TestCase)",
+    new_api="unittest.TestLoader().loadTestsFromTestCase(TestCase)",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY313_DATE,
+    change_url="https://docs.python.org/3/whatsnew/3.13.html#unittest",
+    summary="Python 3.13 removed unittest.makeSuite (deprecated since 3.11); use TestLoader.loadTestsFromTestCase.",
+    programs=(
+        _p(
+            "arithmetic_suite",
+            """
+            import io
+            import unittest
+
+            class ArithmeticTests(unittest.TestCase):
+                def test_add(self):
+                    self.assertEqual(1 + 1, 2)
+
+                def test_sub(self):
+                    self.assertEqual(5 - 3, 2)
+
+                def test_broken(self):
+                    self.assertEqual(2 * 2, 5)
+
+            def run_arithmetic():
+                suite = unittest.makeSuite(ArithmeticTests)
+                result = unittest.TextTestRunner(stream=io.StringIO()).run(suite)
+                return result.testsRun, len(result.failures), len(result.errors)
+            """,
+            None,
+            """
+            import solution
+            assert solution.run_arithmetic() == (3, 1, 0)
+            """,
+            "Run a small test case and count results.",
+            fix=(("unittest.makeSuite(ArithmeticTests)", "unittest.TestLoader().loadTestsFromTestCase(ArithmeticTests)"),),
+        ),
+        _p(
+            "suite_test_names",
+            """
+            import unittest
+
+            class StringTests(unittest.TestCase):
+                def test_upper(self):
+                    self.assertEqual("a".upper(), "A")
+
+                def test_split(self):
+                    self.assertEqual("a b".split(), ["a", "b"])
+
+                def helper(self):
+                    pass
+
+            def suite_test_names():
+                suite = unittest.makeSuite(StringTests)
+                return sorted(t.id().split(".")[-1] for t in suite)
+            """,
+            None,
+            """
+            import solution
+            assert solution.suite_test_names() == ["test_split", "test_upper"]
+            """,
+            "List test method names collected into a suite.",
+            fix=(("unittest.makeSuite(StringTests)", "unittest.TestLoader().loadTestsFromTestCase(StringTests)"),),
+        ),
+        _p(
+            "run_with_prefix",
+            """
+            import io
+            import unittest
+
+            class PrefixedTests(unittest.TestCase):
+                def test_one(self):
+                    self.assertTrue(True)
+
+                def check_two(self):
+                    self.assertTrue(True)
+
+                def check_three(self):
+                    self.assertTrue(False)
+
+            def run_with_prefix(prefix):
+                suite = unittest.makeSuite(PrefixedTests, prefix=prefix)
+                result = unittest.TextTestRunner(stream=io.StringIO()).run(suite)
+                return result.testsRun, len(result.failures)
+            """,
+            """
+            import io
+            import unittest
+
+            class PrefixedTests(unittest.TestCase):
+                def test_one(self):
+                    self.assertTrue(True)
+
+                def check_two(self):
+                    self.assertTrue(True)
+
+                def check_three(self):
+                    self.assertTrue(False)
+
+            def run_with_prefix(prefix):
+                loader = unittest.TestLoader()
+                loader.testMethodPrefix = prefix
+                suite = loader.loadTestsFromTestCase(PrefixedTests)
+                result = unittest.TextTestRunner(stream=io.StringIO()).run(suite)
+                return result.testsRun, len(result.failures)
+            """,
+            """
+            import solution
+            assert solution.run_with_prefix("test") == (1, 0)
+            assert solution.run_with_prefix("check") == (2, 1)
+            """,
+            "Collect tests by a custom method prefix.",
+        ),
+        _p(
+            "suite_builder",
+            """
+            import unittest
+
+            class AlphaTests(unittest.TestCase):
+                def test_a(self):
+                    pass
+
+                def test_b(self):
+                    pass
+
+            class BetaTests(unittest.TestCase):
+                def test_c(self):
+                    pass
+
+            class SuiteBuilder:
+                def __init__(self):
+                    self.suite = unittest.TestSuite()
+
+                def add(self, case):
+                    self.suite.addTests(unittest.makeSuite(case))
+                    return self
+
+                def count(self):
+                    return self.suite.countTestCases()
+
+            def total_tests():
+                return SuiteBuilder().add(AlphaTests).add(BetaTests).count()
+            """,
+            None,
+            """
+            import solution
+            assert solution.total_tests() == 3
+            assert solution.SuiteBuilder().add(solution.BetaTests).count() == 1
+            """,
+            "Combine several test cases into one suite.",
+            fix=(("unittest.makeSuite(case)", "unittest.TestLoader().loadTestsFromTestCase(case)"),),
+        ),
+        _p(
+            "count_tests",
+            """
+            import unittest
+
+            class MathTests(unittest.TestCase):
+                def test_abs(self):
+                    self.assertEqual(abs(-1), 1)
+
+                def test_pow(self):
+                    self.assertEqual(2 ** 3, 8)
+
+                def test_div(self):
+                    self.assertEqual(7 // 2, 3)
+
+                def test_mod(self):
+                    self.assertEqual(7 % 2, 1)
+
+            def count_tests():
+                return unittest.makeSuite(MathTests).countTestCases()
+            """,
+            None,
+            """
+            import solution
+            assert solution.count_tests() == 4
+            """,
+            "Number of tests in a case.",
+            fix=(("unittest.makeSuite(MathTests)", "unittest.TestLoader().loadTestsFromTestCase(MathTests)"),),
+        ),
+        _p(
+            "run_and_collect",
+            """
+            import unittest
+
+            class Outcomes(unittest.TestCase):
+                def test_pass(self):
+                    self.assertEqual(1, 1)
+
+                def test_fail(self):
+                    self.assertEqual(1, 2)
+
+                def test_error(self):
+                    raise RuntimeError("boom")
+
+            def run_and_collect():
+                suite = unittest.makeSuite(Outcomes)
+                result = unittest.TestResult()
+                suite.run(result)
+                status = {t.id().split(".")[-1]: "ok" for t in suite}
+                for test, _tb in result.failures:
+                    status[test.id().split(".")[-1]] = "fail"
+                for test, _tb in result.errors:
+                    status[test.id().split(".")[-1]] = "error"
+                return status
+            """,
+            None,
+            """
+            import solution
+            assert solution.run_and_collect() == {"test_pass": "ok", "test_fail": "fail", "test_error": "error"}
+            """,
+            "Map each test to its outcome.",
+            fix=(("unittest.makeSuite(Outcomes)", "unittest.TestLoader().loadTestsFromTestCase(Outcomes)"),),
+        ),
+    ),
+    siblings=(
+        _s(
+            "loader_names",
+            """
+            import unittest
+
+            class SampleTests(unittest.TestCase):
+                def test_x(self):
+                    pass
+
+                def test_y(self):
+                    pass
+
+            def loader_names():
+                return unittest.TestLoader().getTestCaseNames(SampleTests)
+            """,
+            """
+            import solution
+            assert solution.loader_names() == ["test_x", "test_y"]
+            """,
+            "TestLoader.getTestCaseNames is unchanged.",
+        ),
+        _s(
+            "suite_from_names",
+            """
+            import io
+            import unittest
+
+            class NamedTests(unittest.TestCase):
+                def test_p(self):
+                    self.assertTrue(True)
+
+                def test_q(self):
+                    self.assertTrue(False)
+
+            def suite_from_names(names):
+                suite = unittest.TestLoader().loadTestsFromNames(names, NamedTests)
+                result = unittest.TextTestRunner(stream=io.StringIO()).run(suite)
+                return result.testsRun, len(result.failures)
+            """,
+            """
+            import solution
+            assert solution.suite_from_names(["test_p"]) == (1, 0)
+            assert solution.suite_from_names(["test_p", "test_q"]) == (2, 1)
+            """,
+            "TestLoader.loadTestsFromNames is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_STD_SAFECONFIGPARSER = ApiChange(
+    package="python",
+    api_family="configparser.SafeConfigParser",
+    old_api="configparser.SafeConfigParser",
+    new_api="configparser.ConfigParser",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY312_DATE,
+    change_url=_PY312_URL,
+    summary="Python 3.12 removed configparser.SafeConfigParser (deprecated since 3.2); use ConfigParser.",
+    programs=(
+        _p(
+            "load_db_section",
+            """
+            from configparser import SafeConfigParser
+
+            def load_db_section(text):
+                cp = SafeConfigParser()
+                cp.read_string(text)
+                return {"host": cp.get("db", "host"), "port": cp.getint("db", "port")}
+            """,
+            None,
+            """
+            import solution
+            assert solution.load_db_section("[db]\\nhost = h\\nport = 5432\\n") == {"host": "h", "port": 5432}
+            assert solution.load_db_section("[db]\\nhost=localhost\\nport=1\\n") == {"host": "localhost", "port": 1}
+            """,
+            "Read a database section from INI text.",
+            fix=(("SafeConfigParser", "ConfigParser"),),
+        ),
+        _p(
+            "interpolated_path",
+            """
+            import configparser
+
+            def interpolated_path(text):
+                cp = configparser.SafeConfigParser()
+                cp.read_string(text)
+                return cp.get("paths", "log")
+            """,
+            None,
+            """
+            import solution
+            text = "[paths]\\nroot = /srv/app\\nlog = %(root)s/logs\\n"
+            assert solution.interpolated_path(text) == "/srv/app/logs"
+            assert solution.interpolated_path("[paths]\\nlog = /tmp/x\\n") == "/tmp/x"
+            """,
+            "Resolve %(name)s interpolation in a config value.",
+            fix=(("configparser.SafeConfigParser", "configparser.ConfigParser"),),
+        ),
+        _p(
+            "config_reader",
+            """
+            from configparser import SafeConfigParser
+
+            class ConfigReader:
+                def __init__(self, text):
+                    self.cp = SafeConfigParser()
+                    self.cp.read_string(text)
+
+                def sections(self):
+                    return sorted(self.cp.sections())
+
+                def value(self, section, key, default=None):
+                    return self.cp.get(section, key, fallback=default)
+            """,
+            None,
+            """
+            import solution
+            r = solution.ConfigReader("[b]\\nk = 1\\n[a]\\nx = y\\n")
+            assert r.sections() == ["a", "b"]
+            assert r.value("a", "x") == "y"
+            assert r.value("a", "missing", "dflt") == "dflt"
+            """,
+            "Small wrapper exposing sections and values.",
+            fix=(("SafeConfigParser", "ConfigParser"),),
+        ),
+        _p(
+            "section_sizes",
+            """
+            from configparser import SafeConfigParser
+
+            def section_sizes(text):
+                cp = SafeConfigParser()
+                cp.read_string(text)
+                return {name: len(cp.options(name)) for name in cp.sections()}
+            """,
+            None,
+            """
+            import solution
+            assert solution.section_sizes("[one]\\na=1\\nb=2\\n[two]\\nc=3\\n") == {"one": 2, "two": 1}
+            assert solution.section_sizes("") == {}
+            """,
+            "Number of options per section.",
+            fix=(("SafeConfigParser", "ConfigParser"),),
+        ),
+        _p(
+            "parse_flags",
+            """
+            import configparser
+
+            def parse_flags(text):
+                cp = configparser.SafeConfigParser()
+                cp.read_string(text)
+                return {k: cp.getboolean("flags", k) for k in cp.options("flags")}
+            """,
+            None,
+            """
+            import solution
+            out = solution.parse_flags("[flags]\\ndebug = yes\\nverbose = off\\ncolor = 1\\n")
+            assert out == {"debug": True, "verbose": False, "color": True}
+            """,
+            "Boolean flags from a config section.",
+            fix=(("configparser.SafeConfigParser", "configparser.ConfigParser"),),
+        ),
+        _p(
+            "merge_defaults",
+            """
+            from configparser import SafeConfigParser
+
+            def merge_defaults(text, defaults):
+                cp = SafeConfigParser(defaults=defaults)
+                cp.read_string(text)
+                return {k: cp.get("app", k) for k in sorted(cp.options("app"))}
+            """,
+            None,
+            """
+            import solution
+            out = solution.merge_defaults("[app]\\nname = demo\\n", {"name": "x", "mode": "prod"})
+            assert out == {"mode": "prod", "name": "demo"}
+            assert solution.merge_defaults("[app]\\n", {"a": "1"}) == {"a": "1"}
+            """,
+            "Merge defaults into a config section.",
+            fix=(("SafeConfigParser", "ConfigParser"),),
+        ),
+    ),
+    siblings=(
+        _s(
+            "raw_config",
+            """
+            from configparser import RawConfigParser
+
+            def raw_config(text):
+                cp = RawConfigParser()
+                cp.read_string(text)
+                return cp.get("s", "v")
+            """,
+            """
+            import solution
+            assert solution.raw_config("[s]\\nv = %(x)s literal\\n") == "%(x)s literal"
+            """,
+            "configparser.RawConfigParser is unchanged.",
+        ),
+        _s(
+            "extended_interpolation",
+            """
+            from configparser import ConfigParser, ExtendedInterpolation
+
+            def extended_interpolation(text):
+                cp = ConfigParser(interpolation=ExtendedInterpolation())
+                cp.read_string(text)
+                return cp.get("b", "path")
+            """,
+            """
+            import solution
+            assert solution.extended_interpolation("[a]\\nroot = /r\\n[b]\\npath = ${a:root}/x\\n") == "/r/x"
+            """,
+            "configparser.ExtendedInterpolation is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+_STD_LOCALE_FORMAT = ApiChange(
+    package="python",
+    api_family="locale.format",
+    old_api="locale.format",
+    new_api="locale.format_string",
+    old_pin=_PY_OLD,
+    new_pin=_PY_NEW,
+    change_date=_PY312_DATE,
+    change_url=_PY312_URL,
+    summary="Python 3.12 removed locale.format (deprecated since 3.7); use locale.format_string.",
+    programs=(
+        _p(
+            "money",
+            """
+            import locale
+
+            def money(amount, symbol="$"):
+                return symbol + locale.format("%.2f", amount, grouping=True)
+            """,
+            None,
+            """
+            import solution
+            assert solution.money(3.5) == "$3.50"
+            assert solution.money(1234567.891, "EUR ") == "EUR 1234567.89"
+            assert solution.money(0) == "$0.00"
+            """,
+            "Format an amount with two decimals.",
+            fix=(("locale.format(", "locale.format_string("),),
+        ),
+        _p(
+            "percent",
+            """
+            from locale import format as lformat
+
+            def percent(fraction, digits=1):
+                return lformat("%." + str(digits) + "f", fraction * 100) + "%"
+            """,
+            None,
+            """
+            import solution
+            assert solution.percent(0.256) == "25.6%"
+            assert solution.percent(0.5, 0) == "50%"
+            assert solution.percent(1, 2) == "100.00%"
+            """,
+            "Format a fraction as a percentage string.",
+            fix=(("from locale import format as lformat", "from locale import format_string as lformat"),),
+        ),
+        _p(
+            "table_row",
+            """
+            import locale
+
+            def table_row(values, width=8):
+                return "|".join(locale.format("%" + str(width) + "d", v) for v in values)
+            """,
+            None,
+            """
+            import solution
+            assert solution.table_row([1, 22, 333], 4) == "   1|  22| 333"
+            assert solution.table_row([], 4) == ""
+            assert solution.table_row([7], 2) == " 7"
+            """,
+            "Right-align integers into fixed-width columns.",
+            fix=(("locale.format(", "locale.format_string("),),
+        ),
+        _p(
+            "number_formatter",
+            """
+            import locale
+
+            class NumberFormatter:
+                def __init__(self, precision):
+                    self.spec = "%." + str(precision) + "f"
+
+                def __call__(self, value):
+                    return locale.format(self.spec, value)
+
+                def many(self, values):
+                    return [self(v) for v in values]
+            """,
+            None,
+            """
+            import solution
+            fmt = solution.NumberFormatter(3)
+            assert fmt(3.14159) == "3.142"
+            assert fmt.many([1, 2.5]) == ["1.000", "2.500"]
+            assert solution.NumberFormatter(0)(2.5) == "2"
+            """,
+            "Callable formatter with fixed precision.",
+            fix=(("locale.format(", "locale.format_string("),),
+        ),
+        _p(
+            "padded_counter",
+            """
+            import locale
+
+            def padded_counter(values):
+                total = sum(values)
+                return locale.format("%05d", total), locale.format("%+d", total)
+            """,
+            None,
+            """
+            import solution
+            assert solution.padded_counter([1, 2, 3]) == ("00006", "+6")
+            assert solution.padded_counter([-10]) == ("-0010", "-10")
+            """,
+            "Zero-padded and signed representations of a sum.",
+            fix=(("locale.format(", "locale.format_string("),),
+        ),
+        _p(
+            "scientific",
+            """
+            import locale
+
+            def scientific(values):
+                return [locale.format("%.1e", v) for v in values]
+            """,
+            None,
+            """
+            import solution
+            assert solution.scientific([1500, 0.00025]) == ["1.5e+03", "2.5e-04"]
+            assert solution.scientific([]) == []
+            """,
+            "Scientific notation with one decimal.",
+            fix=(("locale.format(", "locale.format_string("),),
+        ),
+    ),
+    siblings=(
+        _s(
+            "format_string_grouped",
+            """
+            import locale
+
+            def format_string_grouped(value):
+                return locale.format_string("%d items", value, grouping=True)
+            """,
+            """
+            import solution
+            assert solution.format_string_grouped(42) == "42 items"
+            assert solution.format_string_grouped(0) == "0 items"
+            """,
+            "locale.format_string is unchanged.",
+        ),
+        _s(
+            "locale_str",
+            """
+            import locale
+
+            def locale_str(value):
+                return locale.str(value)
+            """,
+            """
+            import solution
+            assert solution.locale_str(2.5) == "2.5"
+            assert solution.locale_str(10.0) == "10"
+            """,
+            "locale.str is unchanged.",
+        ),
+    ),
+    python_version=_PY_NEW,
+    stdlib=True,
+)
+
+
+CHANGES: list[ApiChange] = [
+    _PIL_ANTIALIAS,
+    _PIL_LINEAR,
+    _PIL_TEXTSIZE,
+    _PIL_GETSIZE,
+    _PIL_MULTILINE,
+    _NX_INFO,
+    _NX_NUMPY_MATRIX,
+    _NX_GPICKLE,
+    _NX_SCIPY_SPARSE,
+    _NX_PAGERANK,
+    _NX_HITS,
+    _J2_MARKUP,
+    _J2_ESCAPE,
+    _J2_CONTEXTFUNCTION,
+    _J2_CONTEXTFILTER,
+    _J2_ENVFILTER,
+    _PYD_REGEX,
+    _PYD_CONST,
+    _PYD_UNIQUE,
+    _PYD_ROOT_VALIDATOR,
+    _PYD_BASESETTINGS,
+    _PYD_CONLIST,
+    _STD_CGI,
+    _STD_PIPES,
+    _STD_IMGHDR,
+    _STD_XDRLIB,
+    _STD_LOOSEVERSION,
+    _STD_MAKESUITE,
+    _STD_SAFECONFIGPARSER,
+    _STD_LOCALE_FORMAT,
+]
