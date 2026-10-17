@@ -1,0 +1,890 @@
+{
+  "n_candidate_tasks": 3148,
+  "n_kept": 3048,
+  "n_excluded": 100,
+  "excluded": [
+    {
+      "task_id": "4f79fa010cc16971",
+      "cluster_id": "numpy:numpy.array.copy_false/matrix_wrapper",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-2.1.3-415ac50f79",
+      "reason": "request=fail,reference=fail",
+      "stderr": "                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: Unable to avoid copy while creating an array as requested.\nIf using `np.array(obj, copy=False)` replace it with `np.asarray(obj)` to allow a copy when needed (no behavior change in NumPy 1.x).\nFor more details, see https://numpy.org/devdocs/numpy_2_0_migration_guide.html#adapting-to-changes-in-the-copy-keyword."
+    },
+    {
+      "task_id": "4d6c92f1a1b45a6f",
+      "cluster_id": "numpy:numpy.array.copy_false/matrix_wrapper",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-2.1.3-415ac50f79",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 11, in tolist_x\n    return self.data2.tolist_x()\n           ^^^^^^^^^^^^^^^^^^^\nAttributeError: 'numpy.ndarray' object has no attribute 'tolist_x'. Did you mean: 'tolist'?"
+    },
+    {
+      "task_id": "684fdda292a47781",
+      "cluster_id": "numpy:numpy.array.copy_false/matrix_wrapper",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-c5d65304d5",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 11, in tolist_x\n    return self.data2.tolist_x()\n           ^^^^^^^^^^^^^^^^^^^\nAttributeError: 'numpy.ndarray' object has no attribute 'tolist_x'. Did you mean: 'tolist'?"
+    },
+    {
+      "task_id": "baf29790ce0d13d1",
+      "cluster_id": "scikit-learn:sklearn.preprocessing.OneHotEncoder.sparse/category_encoder",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 6, in __init__\n    self.enc = OneHotEncoder(sparse=False, handle_unknown=\"ignore\")\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: OneHotEncoder.__init__() got an unexpected keyword argument 'sparse'"
+    },
+    {
+      "task_id": "37fdd88f5c3e137c",
+      "cluster_id": "scikit-learn:sklearn.preprocessing.OneHotEncoder.sparse/category_encoder",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_val\n    self.enc.fit_val([[x] for x in labels_cur])\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'OneHotEncoder' object has no attribute 'fit_val'"
+    },
+    {
+      "task_id": "7d904bf2555cae46",
+      "cluster_id": "scikit-learn:sklearn.preprocessing.OneHotEncoder.sparse/category_encoder",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_val\n    self.enc.fit_val([[x] for x in labels_cur])\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'OneHotEncoder' object has no attribute 'fit_val'"
+    },
+    {
+      "task_id": "1ed946daf3fcb275",
+      "cluster_id": "scikit-learn:sklearn.linear_model.SGDClassifier.loss_log/probability_model",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_tmp\n    self.clf.fit_tmp(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'SGDClassifier' object has no attribute 'fit_tmp'"
+    },
+    {
+      "task_id": "b4276bf1a9147c3d",
+      "cluster_id": "scikit-learn:sklearn.linear_model.SGDClassifier.loss_log/probability_model",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_tmp\n    self.clf.fit_tmp(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'SGDClassifier' object has no attribute 'fit_tmp'"
+    },
+    {
+      "task_id": "9bf2b641bac840e8",
+      "cluster_id": "scikit-learn:sklearn.linear_model.SGDClassifier.loss_log/probability_model",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_tmp\n    self.clf.fit_tmp(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'SGDClassifier' object has no attribute 'fit_tmp'"
+    },
+    {
+      "task_id": "59402dc65b695c2a",
+      "cluster_id": "scikit-learn:sklearn.linear_model.LinearRegression.normalize/trend_model",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 6, in __init__\n    self.model = LinearRegression(normalize=True)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: LinearRegression.__init__() got an unexpected keyword argument 'normalize'"
+    },
+    {
+      "task_id": "0c22cdaa6ac7baaa",
+      "cluster_id": "scikit-learn:sklearn.linear_model.LinearRegression.normalize/trend_model",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 12, in fit_cur\n    self.model.fit_cur(X, series_v)\n    ^^^^^^^^^^^^^^^^^^\nAttributeError: 'Pipeline' object has no attribute 'fit_cur'"
+    },
+    {
+      "task_id": "5533c21c7bfb8acb",
+      "cluster_id": "scikit-learn:sklearn.linear_model.LinearRegression.normalize/trend_model",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 10, in fit_cur\n    self.model.fit_cur(X, series_v)\n    ^^^^^^^^^^^^^^^^^^\nAttributeError: 'LinearRegression' object has no attribute 'fit_cur'"
+    },
+    {
+      "task_id": "16f66f808e989681",
+      "cluster_id": "scikit-learn:sklearn.ensemble.base_estimator/bagged_regressor",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 7, in __init__\n    self.model = BaggingRegressor(base_estimator=DecisionTreeRegressor(), n_estimators=n, bootstrap=False, random_state=0)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: BaggingRegressor.__init__() got an unexpected keyword argument 'base_estimator'"
+    },
+    {
+      "task_id": "4397c45b22be6e30",
+      "cluster_id": "scikit-learn:sklearn.ensemble.base_estimator/bagged_regressor",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 10, in fit_v\n    self.model.fit_v(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'BaggingRegressor' object has no attribute 'fit_v'"
+    },
+    {
+      "task_id": "0cd51c7343e72c78",
+      "cluster_id": "scikit-learn:sklearn.ensemble.base_estimator/bagged_regressor",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 10, in fit_v\n    self.model.fit_v(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'BaggingRegressor' object has no attribute 'fit_v'"
+    },
+    {
+      "task_id": "69e1f275fabb7b4c",
+      "cluster_id": "scikit-learn:sklearn.linear_model.LogisticRegression.penalty_none/plain_logit_class",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_obj\n    self.clf.fit_obj(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'LogisticRegression' object has no attribute 'fit_obj'"
+    },
+    {
+      "task_id": "fd20048f7430c846",
+      "cluster_id": "scikit-learn:sklearn.linear_model.LogisticRegression.penalty_none/plain_logit_class",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_obj\n    self.clf.fit_obj(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'LogisticRegression' object has no attribute 'fit_obj'"
+    },
+    {
+      "task_id": "6e8d81e17aece865",
+      "cluster_id": "scikit-learn:sklearn.linear_model.LogisticRegression.penalty_none/plain_logit_class",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_obj\n    self.clf.fit_obj(X, y)\n    ^^^^^^^^^^^^^^^^\nAttributeError: 'LogisticRegression' object has no attribute 'fit_obj'"
+    },
+    {
+      "task_id": "7ac06567b682d5a0",
+      "cluster_id": "scikit-learn:sklearn.tree.criterion_mse/extra_trees_model",
+      "kind": "repair",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_cur\n    self.model.fit_cur(X, y)\n    ^^^^^^^^^^^^^^^^^^\nAttributeError: 'ExtraTreesRegressor' object has no attribute 'fit_cur'"
+    },
+    {
+      "task_id": "0b90c6d3a0959551",
+      "cluster_id": "scikit-learn:sklearn.tree.criterion_mse/extra_trees_model",
+      "kind": "previously_correct",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_cur\n    self.model.fit_cur(X, y)\n    ^^^^^^^^^^^^^^^^^^\nAttributeError: 'ExtraTreesRegressor' object has no attribute 'fit_cur'"
+    },
+    {
+      "task_id": "c9274eb4eb370b74",
+      "cluster_id": "scikit-learn:sklearn.tree.criterion_mse/extra_trees_model",
+      "kind": "old_version",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in fit_cur\n    self.model.fit_cur(X, y)\n    ^^^^^^^^^^^^^^^^^^\nAttributeError: 'ExtraTreesRegressor' object has no attribute 'fit_cur'"
+    },
+    {
+      "task_id": "b7dc29376f46a71d",
+      "cluster_id": "scikit-learn:sklearn.tree.n_features_/sib/node_count",
+      "kind": "near_api",
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 6, in node_count_cur\n    return int(tree.tree_.node_count_cur)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'sklearn.tree._tree.Tree' object has no attribute 'node_count_cur'. Did you mean: 'node_count'?"
+    },
+    {
+      "task_id": "2aaa2f9b526d591f",
+      "cluster_id": "scikit-learn:sklearn.tree.n_features_/sib/node_count",
+      "kind": "near_api_old",
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 6, in node_count_cur\n    return int(tree.tree_.node_count_cur)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'sklearn.tree._tree.Tree' object has no attribute 'node_count_cur'. Did you mean: 'node_count'?"
+    },
+    {
+      "task_id": "b1c786db97700b00",
+      "cluster_id": "networkx:networkx.to_numpy_matrix/matrix_cache",
+      "kind": "repair",
+      "env_id": "py3.11-networkx-3.3-d323e040e9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"solution.py\", line 9, in put_val\n    self.store[name_tmp] = nx.to_numpy_matrix(G, nodelist=sorted(G))\n                           ^^^^^^^^^^^^^^^^^^\nAttributeError: module 'networkx' has no attribute 'to_numpy_matrix'"
+    },
+    {
+      "task_id": "6be8ea992661d209",
+      "cluster_id": "networkx:networkx.to_numpy_matrix/matrix_cache",
+      "kind": "previously_correct",
+      "env_id": "py3.11-networkx-3.3-d323e040e9",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 15, in shape_val\n    return tuple(int(n) for n in self.store[name_tmp].shape_val)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'numpy.ndarray' object has no attribute 'shape_val'"
+    },
+    {
+      "task_id": "c114c204b4755213",
+      "cluster_id": "networkx:networkx.to_numpy_matrix/matrix_cache",
+      "kind": "old_version",
+      "env_id": "py3.11-networkx-2.8.8-be78d257d3",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 15, in shape_val\n    return tuple(int(n) for n in self.store[name_tmp].shape_val)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'matrix' object has no attribute 'shape_val'"
+    },
+    {
+      "task_id": "c3448df5dc3cd1a1",
+      "cluster_id": "jinja2:jinja2.contextfunction/site_links",
+      "kind": "repair",
+      "env_id": "py3.11-jinja2-3.1.4-d193e0ca9a",
+      "reason": "request=fail,reference=fail",
+      "stderr": "    import solution\n  File \"solution.py\", line 1, in <module>\n    from jinja2 import Environment, contextfunction\nImportError: cannot import name 'contextfunction' from 'jinja2' (/usr/local/lib/python3.11/site-packages/jinja2/__init__.py)"
+    },
+    {
+      "task_id": "a1458155eb42c778",
+      "cluster_id": "jinja2:jinja2.contextfunction/site_links",
+      "kind": "previously_correct",
+      "env_id": "py3.11-jinja2-3.1.4-d193e0ca9a",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 15, in render_tmp\n    return self.env.from_string(template2).render_tmp(base=self.base)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'Template' object has no attribute 'render_tmp'"
+    },
+    {
+      "task_id": "1b84322e12e3e063",
+      "cluster_id": "jinja2:jinja2.contextfunction/site_links",
+      "kind": "old_version",
+      "env_id": "py3.11-jinja2-2.11.3-d08b08374b",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 15, in render_tmp\n    return self.env.from_string(template2).render_tmp(base=self.base)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'Template' object has no attribute 'render_tmp'"
+    },
+    {
+      "task_id": "966814bdc10d34c2",
+      "cluster_id": "jinja2:jinja2.contextfilter/precision_formatter",
+      "kind": "repair",
+      "env_id": "py3.11-jinja2-3.1.4-d193e0ca9a",
+      "reason": "request=fail,reference=fail",
+      "stderr": "    import solution\n  File \"solution.py\", line 1, in <module>\n    from jinja2 import Environment, contextfilter\nImportError: cannot import name 'contextfilter' from 'jinja2' (/usr/local/lib/python3.11/site-packages/jinja2/__init__.py)"
+    },
+    {
+      "task_id": "9b3f32481da53be5",
+      "cluster_id": "jinja2:jinja2.contextfilter/precision_formatter",
+      "kind": "previously_correct",
+      "env_id": "py3.11-jinja2-3.1.4-d193e0ca9a",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 15, in render2\n    return self.env.from_string(tpl_obj).render2(values=values, precision=precision)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'Template' object has no attribute 'render2'. Did you mean: 'render'?"
+    },
+    {
+      "task_id": "ed87dfaab4f3ecee",
+      "cluster_id": "jinja2:jinja2.contextfilter/precision_formatter",
+      "kind": "old_version",
+      "env_id": "py3.11-jinja2-2.11.3-d08b08374b",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 15, in render2\n    return self.env.from_string(tpl_obj).render2(values=values, precision=precision)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'Template' object has no attribute 'render2'. Did you mean: 'render'?"
+    },
+    {
+      "task_id": "ec3b0b0fcc99babd",
+      "cluster_id": "pydantic:pydantic.Field(regex=)/parse_sku",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 823, in Field\n    raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `regex` is removed. use `pattern` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "469b76d5b526959f",
+      "cluster_id": "pydantic:pydantic.Field(regex=)/parse_sku",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "pydantic_core._pydantic_core.ValidationError: 1 validation error for Product_cur\nsku_obj\n  Field required [type=missing, input_value={'sku': 'AB-123', 'qty': '4'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.9/v/missing"
+    },
+    {
+      "task_id": "4ffc735f3a7b485c",
+      "cluster_id": "pydantic:pydantic.Field(regex=)/parse_sku",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"pydantic/main.py\", line 341, in pydantic.main.BaseModel.__init__\npydantic.error_wrappers.ValidationError: 1 validation error for Product_cur\nsku_obj\n  field required (type=value_error.missing)"
+    },
+    {
+      "task_id": "d5a849aec775577b",
+      "cluster_id": "pydantic:pydantic.Field(const=)/make_event",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 791, in Field\n    raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `const` is removed, use `Literal` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "07f6920fdd6f3ccd",
+      "cluster_id": "pydantic:pydantic.Field(const=)/make_event",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "Traceback (most recent call last):\n  File \"test_solution.py\", line 6, in <module>\n    raise AssertionError(\"expected rejection\")\nAssertionError: expected rejection"
+    },
+    {
+      "task_id": "274a0c98d52ea2f5",
+      "cluster_id": "pydantic:pydantic.Field(const=)/make_event",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "Traceback (most recent call last):\n  File \"test_solution.py\", line 6, in <module>\n    raise AssertionError(\"expected rejection\")\nAssertionError: expected rejection"
+    },
+    {
+      "task_id": "adc251a80f503ab2",
+      "cluster_id": "pydantic:pydantic.Field(const=)/api_request",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 791, in Field\n    raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `const` is removed, use `Literal` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "60fc05e8d5db448d",
+      "cluster_id": "pydantic:pydantic.Field(const=)/api_request",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "pydantic_core._pydantic_core.ValidationError: 1 validation error for ApiRequest_out\naction_out\n  Field required [type=missing, input_value={'action': 'list'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.9/v/missing"
+    },
+    {
+      "task_id": "b2adb09759e0e478",
+      "cluster_id": "pydantic:pydantic.Field(const=)/api_request",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"pydantic/main.py\", line 341, in pydantic.main.BaseModel.__init__\npydantic.error_wrappers.ValidationError: 1 validation error for ApiRequest_out\naction_out\n  field required (type=value_error.missing)"
+    },
+    {
+      "task_id": "71ca80b84109e2d6",
+      "cluster_id": "pydantic:pydantic.Field(const=)/circle_area",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 791, in Field\n    raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `const` is removed, use `Literal` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "b294084b14643c6b",
+      "cluster_id": "pydantic:pydantic.Field(const=)/circle_area",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "pydantic_core._pydantic_core.ValidationError: 1 validation error for Circle_tmp\nradius2\n  Field required [type=missing, input_value={'radius': 1}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.9/v/missing"
+    },
+    {
+      "task_id": "e2c708af76556028",
+      "cluster_id": "pydantic:pydantic.Field(const=)/circle_area",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"pydantic/main.py\", line 341, in pydantic.main.BaseModel.__init__\npydantic.error_wrappers.ValidationError: 1 validation error for Circle_tmp\nradius2\n  field required (type=value_error.missing)"
+    },
+    {
+      "task_id": "b800babe8a9ebaca",
+      "cluster_id": "pydantic:pydantic.Field(const=)/unpack_envelope",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 791, in Field\n    raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `const` is removed, use `Literal` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "0963dc48bafabdbb",
+      "cluster_id": "pydantic:pydantic.Field(const=)/unpack_envelope",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "pydantic_core._pydantic_core.ValidationError: 1 validation error for Envelope_cur\nbody_obj\n  Field required [type=missing, input_value={'body': {'b': 1, 'a': 2}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.9/v/missing"
+    },
+    {
+      "task_id": "18a9d40dae8d6c69",
+      "cluster_id": "pydantic:pydantic.Field(const=)/unpack_envelope",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"pydantic/main.py\", line 341, in pydantic.main.BaseModel.__init__\npydantic.error_wrappers.ValidationError: 1 validation error for Envelope_cur\nbody_obj\n  field required (type=value_error.missing)"
+    },
+    {
+      "task_id": "d31472a3e14033ab",
+      "cluster_id": "pydantic:pydantic.Field(const=)/plugin_registry",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 791, in Field\n    raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `const` is removed, use `Literal` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "59e1c2b11c18a27d",
+      "cluster_id": "pydantic:pydantic.Field(const=)/plugin_registry",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 3, in <module>\n    assert reg.register_data({\"name\": \"a\"}) is True\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "0feafcb107fa1da4",
+      "cluster_id": "pydantic:pydantic.Field(const=)/plugin_registry",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 3, in <module>\n    assert reg.register_data({\"name\": \"a\"}) is True\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "e2ad0bbe4f197798",
+      "cluster_id": "pydantic:pydantic.Field(const=)/point3d",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 791, in Field\n    raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')\npydantic.errors.PydanticUserError: `const` is removed, use `Literal` instead\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "08d26a87ba66f2d2",
+      "cluster_id": "pydantic:pydantic.Field(const=)/point3d",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "pydantic_core._pydantic_core.ValidationError: 1 validation error for Point3D2\ncoords2\n  Field required [type=missing, input_value={'coords': [1, 2, 2]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.9/v/missing"
+    },
+    {
+      "task_id": "9c66ea3db6f2f57c",
+      "cluster_id": "pydantic:pydantic.Field(const=)/point3d",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"pydantic/main.py\", line 341, in pydantic.main.BaseModel.__init__\npydantic.error_wrappers.ValidationError: 1 validation error for Point3D2\ncoords2\n  field required (type=value_error.missing)"
+    },
+    {
+      "task_id": "06bfe404ed11100f",
+      "cluster_id": "pydantic:pydantic.Field(const=)/sib/literal_kind",
+      "kind": "near_api",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.literal_kind_v({\"kind\": \"square\", \"size\": 2}) == (\"square\", 2.0)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "2be265817c72d5e5",
+      "cluster_id": "pydantic:pydantic.Field(const=)/sib/literal_kind",
+      "kind": "near_api_old",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.literal_kind_v({\"kind\": \"square\", \"size\": 2}) == (\"square\", 2.0)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "220a1bdb0fb3481b",
+      "cluster_id": "pydantic:pydantic.Field(const=)/sib/default_factory_field",
+      "kind": "near_api",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 3, in <module>\n    assert solution.default_factory_field2({\"items\": [1, 2], \"owner\": \"me\"}) == (\"me\", 2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "1ee30cd0051722ec",
+      "cluster_id": "pydantic:pydantic.Field(const=)/sib/default_factory_field",
+      "kind": "near_api_old",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 3, in <module>\n    assert solution.default_factory_field2({\"items\": [1, 2], \"owner\": \"me\"}) == (\"me\", 2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "2b51b964548b8316",
+      "cluster_id": "pydantic:pydantic.Field(unique_items=)/parse_tags",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/fields.py\", line 807, in Field\n    raise PydanticUserError(\npydantic.errors.PydanticUserError: `unique_items` is removed, use `Set` instead(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)\nFor further information visit https://errors.pydantic.dev/2.9/u/removed-kwargs"
+    },
+    {
+      "task_id": "f64846ab9cacee5c",
+      "cluster_id": "pydantic:pydantic.Field(unique_items=)/parse_tags",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_internal/_generate_schema.py\", line 198, in check_decorator_fields_exist\n    raise PydanticUserError(\npydantic.errors.PydanticUserError: Decorators defined with incorrect fields: solution.Post_val:108250370020288._unique_cur (use check_fields=False if you're inheriting from the model and intended this)\nFor further information visit https://errors.pydantic.dev/2.9/u/decorator-missing-field"
+    },
+    {
+      "task_id": "c43b808f4f34551a",
+      "cluster_id": "pydantic:pydantic.Field(unique_items=)/parse_tags",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "title_obj\n  field required (type=value_error.missing)\ntags_obj\n  field required (type=value_error.missing)"
+    },
+    {
+      "task_id": "741607539b85462d",
+      "cluster_id": "pydantic:pydantic.root_validator/order_total",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/deprecated/class_validators.py\", line 240, in root_validator\n    raise PydanticUserError(\npydantic.errors.PydanticUserError: If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`. Note that `@root_validator` is deprecated and should be replaced with `@model_validator`.\nFor further information visit https://errors.pydantic.dev/2.9/u/root-validator-pre-skip"
+    },
+    {
+      "task_id": "b8bac27b37a99c5b",
+      "cluster_id": "pydantic:pydantic.root_validator/order_total",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "    For further information visit https://errors.pydantic.dev/2.9/v/missing\ntotal2\n  Field required [type=missing, input_value={'quantity': 3, 'unit_price': 2.5, 'total': 7.5}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.9/v/missing"
+    },
+    {
+      "task_id": "eca758963c5133ec",
+      "cluster_id": "pydantic:pydantic.root_validator/order_total",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 10, in check_total_x\n    expected_tmp = values_out[\"quantity\"] * values_out[\"unit_price\"]\n                   ~~~~~~~~~~^^^^^^^^^^^^\nKeyError: 'quantity'"
+    },
+    {
+      "task_id": "aef06cbe176e11d0",
+      "cluster_id": "pydantic:pydantic.BaseSettings/server_settings",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_migration.py\", line 296, in wrapper\n    raise PydanticImportError(\npydantic.errors.PydanticImportError: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error"
+    },
+    {
+      "task_id": "10d10741317a8767",
+      "cluster_id": "pydantic:pydantic.BaseSettings/server_settings",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.load_server_settings_x() == (\"0.0.0.0\", 9000)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "8733be0b4bc4e8c4",
+      "cluster_id": "pydantic:pydantic.BaseSettings/server_settings",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.load_server_settings_x() == (\"0.0.0.0\", 9000)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "6fab5fc090947326",
+      "cluster_id": "pydantic:pydantic.BaseSettings/db_config",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_migration.py\", line 296, in wrapper\n    raise PydanticImportError(\npydantic.errors.PydanticImportError: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error"
+    },
+    {
+      "task_id": "9abc1bc9fcc45077",
+      "cluster_id": "pydantic:pydantic.BaseSettings/db_config",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.connection_summary_v() == \"postgres://h/db (pool=12)\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "c1c146023bb14ffc",
+      "cluster_id": "pydantic:pydantic.BaseSettings/db_config",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.connection_summary_v() == \"postgres://h/db (pool=12)\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "0e735e3081e73dc4",
+      "cluster_id": "pydantic:pydantic.BaseSettings/feature_flags",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_migration.py\", line 296, in wrapper\n    raise PydanticImportError(\npydantic.errors.PydanticImportError: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error"
+    },
+    {
+      "task_id": "dcd82b4c8bfcfffa",
+      "cluster_id": "pydantic:pydantic.BaseSettings/feature_flags",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.enabled_flags_val() == [\"beta\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "dcc8a51681997ad1",
+      "cluster_id": "pydantic:pydantic.BaseSettings/feature_flags",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.enabled_flags_val() == [\"beta\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "f0f677a50fb0691f",
+      "cluster_id": "pydantic:pydantic.BaseSettings/limits",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_migration.py\", line 296, in wrapper\n    raise PydanticImportError(\npydantic.errors.PydanticImportError: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error"
+    },
+    {
+      "task_id": "4c3841915495c684",
+      "cluster_id": "pydantic:pydantic.BaseSettings/limits",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.limits_data() == (25, 0.5)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "a7c69df195b315a5",
+      "cluster_id": "pydantic:pydantic.BaseSettings/paths_settings",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_migration.py\", line 296, in wrapper\n    raise PydanticImportError(\npydantic.errors.PydanticImportError: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error"
+    },
+    {
+      "task_id": "92e5782f853337ec",
+      "cluster_id": "pydantic:pydantic.BaseSettings/paths_settings",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 7, in <module>\n    assert solution.resolved_paths_tmp(\"/srv\") == (\"/srv/data\", \"/srv/tmp\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "bd497e2b6e8c5123",
+      "cluster_id": "pydantic:pydantic.BaseSettings/paths_settings",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 7, in <module>\n    assert solution.resolved_paths_tmp(\"/srv\") == (\"/srv/data\", \"/srv/tmp\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "40054f1d54913850",
+      "cluster_id": "pydantic:pydantic.BaseSettings/mail_settings",
+      "kind": "repair",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail,reference=fail",
+      "stderr": "  File \"/usr/local/lib/python3.11/site-packages/pydantic/_migration.py\", line 296, in wrapper\n    raise PydanticImportError(\npydantic.errors.PydanticImportError: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error"
+    },
+    {
+      "task_id": "46bfdbbab9c9d92a",
+      "cluster_id": "pydantic:pydantic.BaseSettings/mail_settings",
+      "kind": "previously_correct",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 9, in <module>\n    assert solution.mail_summary_out() == \"smtps://mail.example.org:465\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "a06daefa02d4909b",
+      "cluster_id": "pydantic:pydantic.BaseSettings/mail_settings",
+      "kind": "old_version",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 9, in <module>\n    assert solution.mail_summary_out() == \"smtps://mail.example.org:465\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "4e3e067c52d76b5a",
+      "cluster_id": "pydantic:pydantic.BaseSettings/sib/model_from_environ",
+      "kind": "near_api",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.model_from_environ2() == (4, True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "e310e5ac7908f5dd",
+      "cluster_id": "pydantic:pydantic.BaseSettings/sib/model_from_environ",
+      "kind": "near_api_old",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 8, in <module>\n    assert solution.model_from_environ2() == (4, True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "6e8bf04b11e957f1",
+      "cluster_id": "pydantic:pydantic.BaseSettings/sib/model_defaults_dict",
+      "kind": "near_api",
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.model_defaults_dict_tmp() == {\"retries\": 3, \"verbose\": False}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "cfd9f873bcae4d2a",
+      "cluster_id": "pydantic:pydantic.BaseSettings/sib/model_defaults_dict",
+      "kind": "near_api_old",
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.model_defaults_dict_tmp() == {\"retries\": 3, \"verbose\": False}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "355e7d6fb014ba3d",
+      "cluster_id": "python:xdrlib/xdr_codec",
+      "kind": "repair",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail,reference=fail",
+      "stderr": "    import solution\n  File \"solution.py\", line 1, in <module>\n    import xdrlib\nModuleNotFoundError: No module named 'xdrlib'"
+    },
+    {
+      "task_id": "d721ad672c32138a",
+      "cluster_id": "python:xdrlib/xdr_codec",
+      "kind": "previously_correct",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 5, in encode_cur\n    data_data = label_data.encode_cur()\n                ^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'encode_cur'"
+    },
+    {
+      "task_id": "0d81c52532b9f40d",
+      "cluster_id": "python:xdrlib/xdr_codec",
+      "kind": "old_version",
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 8, in encode_cur\n    p.pack_string(label_data.encode_cur())\n                  ^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'encode_cur'"
+    },
+    {
+      "task_id": "ff105ee11346c7e9",
+      "cluster_id": "python:unittest.makeSuite/suite_test_names",
+      "kind": "repair",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail,reference=fail",
+      "stderr": "                ^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.13/unittest/__init__.py\", line 80, in __getattr__\n    raise AttributeError(f\"module {__name__!r} has no attribute {name!r}\")\nAttributeError: module 'unittest' has no attribute 'makeSuite'"
+    },
+    {
+      "task_id": "d0d7e976b3ccff03",
+      "cluster_id": "python:unittest.makeSuite/suite_test_names",
+      "kind": "previously_correct",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.suite_test_names_obj() == [\"test_split\", \"test_upper\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "277fc7220c1b7be2",
+      "cluster_id": "python:unittest.makeSuite/suite_test_names",
+      "kind": "old_version",
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.suite_test_names_obj() == [\"test_split\", \"test_upper\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "3a90c69886e32edb",
+      "cluster_id": "python:unittest.makeSuite/run_and_collect",
+      "kind": "repair",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail,reference=fail",
+      "stderr": "                ^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.13/unittest/__init__.py\", line 80, in __getattr__\n    raise AttributeError(f\"module {__name__!r} has no attribute {name!r}\")\nAttributeError: module 'unittest' has no attribute 'makeSuite'"
+    },
+    {
+      "task_id": "4aeaad992c12bb07",
+      "cluster_id": "python:unittest.makeSuite/run_and_collect",
+      "kind": "previously_correct",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.run_and_collect_tmp() == {\"test_pass\": \"ok\", \"test_fail\": \"fail\", \"test_error\": \"error\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "04cbde0735d7f3d8",
+      "cluster_id": "python:unittest.makeSuite/run_and_collect",
+      "kind": "old_version",
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.run_and_collect_tmp() == {\"test_pass\": \"ok\", \"test_fail\": \"fail\", \"test_error\": \"error\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "8252dfc4eaf474bd",
+      "cluster_id": "python:unittest.makeSuite/sib/loader_names",
+      "kind": "near_api",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.loader_names_out() == [\"test_x\", \"test_y\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "7b9265eaf6c5326e",
+      "cluster_id": "python:unittest.makeSuite/sib/loader_names",
+      "kind": "near_api_old",
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 2, in <module>\n    assert solution.loader_names_out() == [\"test_x\", \"test_y\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "6f8c29f6bf90f498",
+      "cluster_id": "python:unittest.makeSuite/sib/suite_from_names",
+      "kind": "near_api",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 3, in <module>\n    assert solution.suite_from_names_data([\"test_p\", \"test_q\"]) == (2, 1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "f6ea7306ca48f465",
+      "cluster_id": "python:unittest.makeSuite/sib/suite_from_names",
+      "kind": "near_api_old",
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "reason": "request=fail",
+      "stderr": "  File \"test_solution.py\", line 3, in <module>\n    assert solution.suite_from_names_data([\"test_p\", \"test_q\"]) == (2, 1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError"
+    },
+    {
+      "task_id": "09b92968d1319f84",
+      "cluster_id": "python:configparser.SafeConfigParser/config_reader",
+      "kind": "repair",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail,reference=fail",
+      "stderr": "    import solution\n  File \"solution.py\", line 1, in <module>\n    from configparser import SafeConfigParser\nImportError: cannot import name 'SafeConfigParser' from 'configparser' (/usr/local/lib/python3.13/configparser.py). Did you mean: 'RawConfigParser'?"
+    },
+    {
+      "task_id": "ca92b7d7df2cb7f7",
+      "cluster_id": "python:configparser.SafeConfigParser/config_reader",
+      "kind": "previously_correct",
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in sections2\n    return sorted(self.cp.sections2())\n                  ^^^^^^^^^^^^^^^^^\nAttributeError: 'ConfigParser' object has no attribute 'sections2'. Did you mean: 'sections'?"
+    },
+    {
+      "task_id": "c6c8f6e20564a381",
+      "cluster_id": "python:configparser.SafeConfigParser/config_reader",
+      "kind": "old_version",
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "reason": "request=fail",
+      "stderr": "  File \"solution.py\", line 9, in sections2\n    return sorted(self.cp.sections2())\n                  ^^^^^^^^^^^^^^^^^\nAttributeError: 'SafeConfigParser' object has no attribute 'sections2'. Did you mean: 'sections'?"
+    }
+  ],
+  "leakage_audit": {
+    "clusters_straddling_splits": [],
+    "heldout_family_outside_test": [],
+    "train_max_timestamp": "2023-12-05T06:19:31.964485+00:00",
+    "known_family_test_min_timestamp": "2024-05-31T11:11:00.702467+00:00",
+    "chronology_ok": true,
+    "exact_duplicate_request_groups": 0,
+    "ok": true
+  },
+  "images": {
+    "py3.11-numpy-2.1.3-415ac50f79": {
+      "image_id": "sha256:119bc51ed47192e7ea6654299a07086056c6b4d05af60d88b2eb54a5c7c1d9b9",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-c5d65304d5": {
+      "image_id": "sha256:9ab8d52c3f9ac487de0b475dde531f2f09c0da431ce37084baa527a0058922cd",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-3729b84097": {
+      "image_id": "sha256:80d9be237b0544f85dbf98378260b71f6d0907dec8bcf04e90fa11cdacdf79f9",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-cdfb5a3327": {
+      "image_id": "sha256:aba8c91202fefff35836c37ff07af65b89ccf9f02689123123deb6d001010989",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-d8f25c837b": {
+      "image_id": "sha256:2160577c9ee78c305202e612f4264ed27e39efc9fb7cb7eadab8a8c157226b55",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-2012c2102d": {
+      "image_id": "sha256:a3c19fbe2bac2bf82de481890c0e2033fef0de60ce2e38242db881b69f72a528",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-a113e77f88": {
+      "image_id": "sha256:1b63e21e41126c038ef606a70335c39513b872e5661e466afe070443de0769be",
+      "ok": true
+    },
+    "py3.11-numpy-1.26.4-1b148fa841": {
+      "image_id": "sha256:c5bebd26adf51a9af155db0e2fe79592f3e0bcdf99b855a6325e9c7df21345f5",
+      "ok": true
+    },
+    "py3.11-pillow-10.4.0-b7ed81f07c": {
+      "image_id": "sha256:331d2b1d4c4ab4f9f24c74306985bfa6c8481fd24266235314188cc92d2e7659",
+      "ok": true
+    },
+    "py3.11-pillow-9.5.0-ccc8f476ca": {
+      "image_id": "sha256:232b419b63f963dc1db26ccb866553f0ead33490df58146c830a4f2eda72fc10",
+      "ok": true
+    },
+    "py3.11-networkx-3.3-d323e040e9": {
+      "image_id": "sha256:db021c74a2b99c7a34e664178bc524aebd1310a71fab275d8a5316dc79d97473",
+      "ok": true
+    },
+    "py3.11-networkx-2.8.8-be78d257d3": {
+      "image_id": "sha256:eb76eb6789fc29ca13617c6572c0a6eff92d3cbd84ed2617a76427102b3fcdc2",
+      "ok": true
+    },
+    "py3.11-jinja2-3.1.4-d193e0ca9a": {
+      "image_id": "sha256:b97fcc0473c64d725bfdfcd4578b58cdc1f408c908e1fdd1f6c975ac09e03215",
+      "ok": true
+    },
+    "py3.11-jinja2-2.11.3-d08b08374b": {
+      "image_id": "sha256:4e948352d3e22cbc6d517c797ad20edc6bb5c429852383ce4336cafd8bb8d1d9",
+      "ok": true
+    },
+    "py3.11-pydantic-2.9.2-fee796cda9": {
+      "image_id": "sha256:07a731e8bb0426d5e4235630964a8c1a282b2273c51197f79b6b73a16cce963c",
+      "ok": true
+    },
+    "py3.11-pydantic-1.10.18-be312fee7f": {
+      "image_id": "sha256:65626debe25091066698d0c3b22712e517a105843ce7d3c76fe938b7ba33848c",
+      "ok": true
+    },
+    "py3.13-stdlib-52c0bba2ba": {
+      "image_id": "sha256:7284969b27de69caa1a5daff68c76a103ac10c0e20a3adf98dccba2fb3809f20",
+      "ok": true
+    },
+    "py3.11-stdlib-ade24754fc": {
+      "image_id": "sha256:75c2e9d44236894a70a6c8b95892edd0ebebf2bf264b7a3525243046143feabc",
+      "ok": true
+    }
+  }
+}

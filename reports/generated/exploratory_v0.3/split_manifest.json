@@ -1,0 +1,236 @@
+{
+  "n_tasks": 3148,
+  "n_clusters": 572,
+  "n_families": 71,
+  "kinds": {
+    "near_api": 277,
+    "near_api_old": 277,
+    "old_version": 832,
+    "previously_correct": 831,
+    "repair": 831
+  },
+  "splits": {
+    "train": 298,
+    "val": 99,
+    "test": 434
+  },
+  "test_subsets": {
+    "known_family": 267,
+    "heldout_family": 167
+  },
+  "rename_failures": [],
+  "split_config": {
+    "train_fraction": 0.45,
+    "val_fraction": 0.15,
+    "heldout_family_fraction": 0.2,
+    "seed": 42,
+    "timestamp_mode": "deployment_window",
+    "deployment_start": "2025-02-01"
+  },
+  "environments": [
+    "py3.11-jinja2-2.11.3-d08b08374b",
+    "py3.11-jinja2-3.1.4-d193e0ca9a",
+    "py3.11-networkx-2.8.8-be78d257d3",
+    "py3.11-networkx-3.3-d323e040e9",
+    "py3.11-numpy-1.26.4-1b148fa841",
+    "py3.11-numpy-1.26.4-2012c2102d",
+    "py3.11-numpy-1.26.4-3729b84097",
+    "py3.11-numpy-1.26.4-a113e77f88",
+    "py3.11-numpy-1.26.4-c5d65304d5",
+    "py3.11-numpy-1.26.4-cdfb5a3327",
+    "py3.11-numpy-1.26.4-d8f25c837b",
+    "py3.11-numpy-2.1.3-415ac50f79",
+    "py3.11-pillow-10.4.0-b7ed81f07c",
+    "py3.11-pillow-9.5.0-ccc8f476ca",
+    "py3.11-pydantic-1.10.18-be312fee7f",
+    "py3.11-pydantic-2.9.2-fee796cda9",
+    "py3.11-stdlib-ade24754fc",
+    "py3.13-stdlib-52c0bba2ba"
+  ],
+  "tasks_sha256": "sha256:78461b658eac3784bde2ad9c74ec6b3ab3d557a4faf8ec15b6a6fb0c8f381ccb",
+  "hidden_sha256": "sha256:ba0aa38be5af1f70f50daf958b5e4d4eae26157553cb12c8a6da9654b1f2f56b",
+  "environments_detail": {
+    "py3.11-numpy-2.1.3-415ac50f79": {
+      "env_id": "py3.11-numpy-2.1.3-415ac50f79",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==2.1.3"
+      ],
+      "package": "numpy",
+      "package_version": "2.1.3"
+    },
+    "py3.11-numpy-1.26.4-c5d65304d5": {
+      "env_id": "py3.11-numpy-1.26.4-c5d65304d5",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4"
+      ],
+      "package": "numpy",
+      "package_version": "1.26.4"
+    },
+    "py3.11-numpy-1.26.4-3729b84097": {
+      "env_id": "py3.11-numpy-1.26.4-3729b84097",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4",
+        "scipy==1.15.3"
+      ],
+      "package": "scipy",
+      "package_version": "1.15.3"
+    },
+    "py3.11-numpy-1.26.4-cdfb5a3327": {
+      "env_id": "py3.11-numpy-1.26.4-cdfb5a3327",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4",
+        "scipy==1.10.1"
+      ],
+      "package": "scipy",
+      "package_version": "1.10.1"
+    },
+    "py3.11-numpy-1.26.4-d8f25c837b": {
+      "env_id": "py3.11-numpy-1.26.4-d8f25c837b",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4",
+        "pandas==2.2.3"
+      ],
+      "package": "pandas",
+      "package_version": "2.2.3"
+    },
+    "py3.11-numpy-1.26.4-2012c2102d": {
+      "env_id": "py3.11-numpy-1.26.4-2012c2102d",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4",
+        "pandas==1.5.3"
+      ],
+      "package": "pandas",
+      "package_version": "1.5.3"
+    },
+    "py3.11-numpy-1.26.4-a113e77f88": {
+      "env_id": "py3.11-numpy-1.26.4-a113e77f88",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4",
+        "scikit-learn==1.6.1",
+        "scipy==1.10.1"
+      ],
+      "package": "scikit-learn",
+      "package_version": "1.6.1"
+    },
+    "py3.11-numpy-1.26.4-1b148fa841": {
+      "env_id": "py3.11-numpy-1.26.4-1b148fa841",
+      "python_version": "3.11",
+      "requirements": [
+        "numpy==1.26.4",
+        "scikit-learn==1.1.3",
+        "scipy==1.10.1"
+      ],
+      "package": "scikit-learn",
+      "package_version": "1.1.3"
+    },
+    "py3.11-pillow-10.4.0-b7ed81f07c": {
+      "env_id": "py3.11-pillow-10.4.0-b7ed81f07c",
+      "python_version": "3.11",
+      "requirements": [
+        "pillow==10.4.0"
+      ],
+      "package": "pillow",
+      "package_version": "10.4.0"
+    },
+    "py3.11-pillow-9.5.0-ccc8f476ca": {
+      "env_id": "py3.11-pillow-9.5.0-ccc8f476ca",
+      "python_version": "3.11",
+      "requirements": [
+        "pillow==9.5.0"
+      ],
+      "package": "pillow",
+      "package_version": "9.5.0"
+    },
+    "py3.11-networkx-3.3-d323e040e9": {
+      "env_id": "py3.11-networkx-3.3-d323e040e9",
+      "python_version": "3.11",
+      "requirements": [
+        "networkx==3.3",
+        "numpy==1.26.4",
+        "scipy==1.10.1"
+      ],
+      "package": "networkx",
+      "package_version": "3.3"
+    },
+    "py3.11-networkx-2.8.8-be78d257d3": {
+      "env_id": "py3.11-networkx-2.8.8-be78d257d3",
+      "python_version": "3.11",
+      "requirements": [
+        "networkx==2.8.8",
+        "numpy==1.26.4",
+        "scipy==1.10.1"
+      ],
+      "package": "networkx",
+      "package_version": "2.8.8"
+    },
+    "py3.11-jinja2-3.1.4-d193e0ca9a": {
+      "env_id": "py3.11-jinja2-3.1.4-d193e0ca9a",
+      "python_version": "3.11",
+      "requirements": [
+        "jinja2==3.1.4",
+        "markupsafe==2.0.1"
+      ],
+      "package": "jinja2",
+      "package_version": "3.1.4"
+    },
+    "py3.11-jinja2-2.11.3-d08b08374b": {
+      "env_id": "py3.11-jinja2-2.11.3-d08b08374b",
+      "python_version": "3.11",
+      "requirements": [
+        "jinja2==2.11.3",
+        "markupsafe==2.0.1"
+      ],
+      "package": "jinja2",
+      "package_version": "2.11.3"
+    },
+    "py3.11-pydantic-2.9.2-fee796cda9": {
+      "env_id": "py3.11-pydantic-2.9.2-fee796cda9",
+      "python_version": "3.11",
+      "requirements": [
+        "pydantic==2.9.2"
+      ],
+      "package": "pydantic",
+      "package_version": "2.9.2"
+    },
+    "py3.11-pydantic-1.10.18-be312fee7f": {
+      "env_id": "py3.11-pydantic-1.10.18-be312fee7f",
+      "python_version": "3.11",
+      "requirements": [
+        "pydantic==1.10.18"
+      ],
+      "package": "pydantic",
+      "package_version": "1.10.18"
+    },
+    "py3.13-stdlib-52c0bba2ba": {
+      "env_id": "py3.13-stdlib-52c0bba2ba",
+      "python_version": "3.13",
+      "requirements": [],
+      "package": "python",
+      "package_version": "3.13"
+    },
+    "py3.11-stdlib-ade24754fc": {
+      "env_id": "py3.11-stdlib-ade24754fc",
+      "python_version": "3.11",
+      "requirements": [],
+      "package": "python",
+      "package_version": "3.11"
+    }
+  },
+  "n_excluded_by_execution": 100,
+  "leakage_audit": {
+    "clusters_straddling_splits": [],
+    "heldout_family_outside_test": [],
+    "train_max_timestamp": "2025-05-02T04:23:54.705373+00:00",
+    "known_family_test_min_timestamp": "2025-07-02T01:01:13.534504+00:00",
+    "chronology_ok": true,
+    "exact_duplicate_request_groups": 0,
+    "ok": true
+  }
+}
