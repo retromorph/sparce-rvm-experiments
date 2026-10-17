@@ -1,0 +1,53 @@
+[run]
+name = "sparce-a4000-poc"
+seed = 42
+seeds = [42, 1337, 2026]
+experiment_ids = ["E1", "E2", "E3"]
+mlflow_uri = "http://127.0.0.1:5000"
+mlflow_experiment = "sparce-poc"
+output_dir = "reports/generated"
+
+[hardware]
+gpu_name = "NVIDIA RTX A4000"
+vram_gb = 16
+max_vram_fraction = 0.85
+max_walltime_hours = 12
+
+[model]
+id = "Qwen/Qwen2.5-Coder-3B-Instruct"
+revision = "REPLACE_WITH_PINNED_COMMIT"
+dtype = "float16"
+max_input_tokens = 2048
+max_new_tokens = 256
+batch_size = 1
+num_candidates = 2
+temperature = 0.0
+# If deterministic decoding yields duplicate candidates, implement reproducible candidate diversity.
+
+[embedding]
+# Separate small embedding model is recommended initially; lock revision and cache.
+id = "sentence-transformers/all-MiniLM-L6-v2"
+revision = "REPLACE_WITH_PINNED_COMMIT"
+batch_size = 8
+
+[rvm]
+max_basis = 64
+length_scale = 0.6
+min_support = 0.65
+posterior_z = 1.64
+margin_threshold = 0.05
+
+[eval]
+min_test_cases = 200
+min_negative_controls = 1000
+update_checkpoints = [10, 50, 100, 500]
+bootstrap_replicates = 2000
+confidence = 0.95
+
+[verifier]
+# MUST be implemented using an isolated, non-root, network-disabled runtime.
+backend = "container"
+network = "none"
+max_walltime_seconds = 30
+max_memory_mb = 2048
+max_pids = 128
