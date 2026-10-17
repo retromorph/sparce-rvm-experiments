@@ -96,3 +96,15 @@ candidate was generated or scored on the final test split. Thresholds in E1–E3
    verifier evidence hash) are rejected before fitting. Rollback restores the full joint posterior snapshot of every scope
    partition and must reproduce the recorded decisions (recommend flag, mean margin, lower bound) bit-exactly.
 7. **Power.** N_test(repair) ≥ 200 and ≥ 1000 base-correct controls are required for GO/NO-GO; otherwise INCONCLUSIVE.
+
+## Version 0.3 — 2026-10-17 (POST HOC, exploratory; recorded after the v0.2 test results were seen)
+
+The v0.2 timing model (release date + offset) combined with a single global chronological cutoff sorted whole API
+families by release date: numpy 2.0, SciPy 1.14/1.15 and CPython 3.13 clusters all fell into the test split, so only
+35 of 71 families had any training repair and only 20 of 439 test repairs belonged to such families. To diagnose the
+null result, the identical cached candidates, verifier outcomes and embeddings were re-split under a
+*deployment-window* timing model (`[dataset] timestamp_mode = "deployment_window"`, adoption date 2025-02-01 after
+every catalogued release; `configs/a4000_exploratory_resplit.toml`). Split rule, grids, budgets and thresholds are
+unchanged. Because the change was decided after looking at final test results, v0.3 outcomes are reported only in
+Appendix A of the report and cannot upgrade any decision; the v0.2 run remains the primary, preregistered result.
+Under v0.3 the memory methods still do not beat the frozen base (SPaRCE −0.9 pp with 2.9 % collateral regressions).

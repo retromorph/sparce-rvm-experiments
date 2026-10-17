@@ -190,7 +190,13 @@ def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict, exp
         s0 = c["seed0"]
         A(f"| {c['capacity']} | {c['comparator']} | {s0.get('delta', float('nan'))*100:+.1f} [{s0.get('ci_low', float('nan'))*100:+.1f}, {s0.get('ci_high', float('nan'))*100:+.1f}] | {c['mean_delta']*100:+.1f} |")
     A(f"\nPareto front (accuracy↑, bytes↓, p95 latency↓): " + "; ".join(f"{p['method']}@{p['capacity']} ({_f(p['accuracy'])}%, {p['bytes']} B)" for p in e2.get("pareto_front", [])) + ".")
-    A(f"\nE2 decision: {json.dumps(d2)} → **{d2.get('status')}**. ARD-pruned vectors (active) are reported, not the screened pool; covariance bytes are O(M²) and included.\n")
+    base_acc = (e1.get("methods", {}).get("base") or [{}])[0].get("repair", {}).get("pass_at_1")
+    full_acc = d2.get("knn_full_accuracy")
+    caveat = ""
+    if base_acc is not None and full_acc is not None and abs(full_acc - base_acc) < 0.01:
+        caveat = (f" **Caveat:** the compression target is met only trivially: full kNN itself is within {abs(full_acc - base_acc) * 100:.1f} pp of the memory-free base "
+                  f"({_f(base_acc)}%), so 'within 1 pp of full kNN at ≤25% bytes' is satisfied by any method that does nothing; it is not evidence of useful compression.")
+    A(f"\nE2 decision: {json.dumps(d2)} → **{d2.get('status')}**.{caveat} ARD-pruned vectors (active) are reported, not the screened pool; covariance bytes are O(M²) and included.\n")
     A("![E2 bytes](plots/e2_accuracy_vs_bytes.png)\n![E2 latency](plots/e2_accuracy_vs_latency.png)\n")
     # 6
     A("## 6. E3 — Regression, continual learning and rollback\n")
@@ -211,6 +217,9 @@ def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict, exp
         A(f"| {r['checkpoint']} | {r['n_admitted']} | {r['n_quarantined']} | {r['promoted']} | {r['active_count']} | {r['bytes']['total']} | {_f(tr.get('pass_at_1'))} | {tr.get('fixes')}/{tr.get('regressions')} | {r['collateral']['n_regressions']}/{r['collateral']['n_base_correct']} | {_f(r['retention_test_fixed'])} | {_f(cal.get('brier'), 3, False) if cal.get('brier') is not None else 'n/a'} | {_f(cal.get('ece'), 3, False) if cal.get('ece') is not None else 'n/a'} | {r.get('snapshot_bytes', '—')} |")
     fs = e3.get("false_submissions", {})
     A(f"\nFalse/unverified submissions: {fs.get('n_submitted')} injected (flipped labels, no verifier evidence); admitted = {fs.get('n_admitted')} (all quarantined). Ablation without the admission check: collateral {fs.get('without_admission_check_collateral', {}).get('n_regressions')}/{fs.get('without_admission_check_collateral', {}).get('n_base_correct')}.")
+    first_fixed = next((r.get("n_first_fixed") for r in e3.get("stream", []) if r.get("promoted")), None)
+    if first_fixed == 0:
+        A("\nRetention is undefined (n/a): the first promoted snapshot fixed zero test repairs, so there were no 'old repairs' whose retention could be measured; the retention gate is therefore INCONCLUSIVE rather than passed.")
     rb = e3.get("rollback", {})
     A(f"\nRollback: restored the full joint posterior snapshot of checkpoint {rb.get('to_checkpoint')} from checkpoint {rb.get('from_checkpoint')} (ledger version {rb.get('ledger_version')}, {rb.get('snapshot_bytes')} bytes, non-destructive append); replayed battery of {rb.get('n_battery')} decisions: {rb.get('n_exact_matches')} exact matches (recommend flag, margin, lower bound) → exact = {rb.get('exact')}; {rb.get('n_decisions_differing_from_last_checkpoint')} decisions differ from the last checkpoint.")
     A(f"\nE3 decision: {json.dumps(d3)} → **{d3.get('status')}**. Posterior credibility is Laplace-approximate; the reliability diagram is an empirical check, not a guarantee.\n")

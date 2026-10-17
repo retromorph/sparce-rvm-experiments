@@ -218,8 +218,12 @@ def run_suite(cfg: dict, *, work_dir: Path, resume: bool, no_mlflow: bool, limit
         raise SystemExit(f"work dir {work_dir} exists; pass --resume to continue it or choose a new --work-dir")
     paths = Paths(work_dir)
     log = Logger(work_dir / "suite.log")
-    manifest = environment_manifest(cfg)
-    (work_dir / "environment_manifest.json").write_text(json.dumps(manifest, indent=2))
+    manifest_path = work_dir / "environment_manifest.json"
+    if resume and manifest_path.exists() and "generate" not in stages:
+        manifest = json.loads(manifest_path.read_text())   # keep the manifest of the run that produced the caches
+    else:
+        manifest = environment_manifest(cfg)
+        manifest_path.write_text(json.dumps(manifest, indent=2))
     log(f"suite start: git={manifest['git_sha'][:12]} dirty={manifest['git_dirty']} work_dir={work_dir} resume={resume}")
     tracker = Tracker(cfg, not no_mlflow, work_dir, log)
 
