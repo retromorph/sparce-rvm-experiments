@@ -57,18 +57,19 @@ def failure_cases(work_dir: Path, e1: dict, n: int = 12) -> list[dict]:
                       "subset": t["subset"], "category": category, "candidate_status": statuses, "candidate_errors": [h[:120] for h in heads],
                       "request_error": (t["request_stderr"].splitlines() or [""])[-1][:160], "base_correct": o["base_correct"],
                       "decision_reason": o["reason"], "margin": o["margin"], "lower": o["lower"], "provenance": t["change_url"]})
-    # diversify by category then family
-    cases.sort(key=lambda c: (c["category"], c["family"]))
-    picked, seen = [], set()
-    for c in cases:
-        key = (c["category"], c["family"])
-        if key in seen and len(picked) < n:
-            continue
-        seen.add(key); picked.append(c)
-        if len(picked) >= n:
-            break
-    if len(picked) < n:
-        picked += [c for c in cases if c not in picked][: n - len(picked)]
+    # round-robin across failure categories, distinct families first
+    by_cat: dict[str, list[dict]] = {}
+    for c in sorted(cases, key=lambda c: (c["family"], c["cluster"])):
+        by_cat.setdefault(c["category"], []).append(c)
+    for cat, lst in by_cat.items():
+        seen_f: set[str] = set()
+        first = [c for c in lst if not (c["family"] in seen_f or seen_f.add(c["family"]))]
+        by_cat[cat] = first + [c for c in lst if c not in first]
+    picked: list[dict] = []
+    while len(picked) < n and any(by_cat.values()):
+        for cat in sorted(by_cat):
+            if by_cat[cat] and len(picked) < n:
+                picked.append(by_cat[cat].pop(0))
     return picked
 
 
