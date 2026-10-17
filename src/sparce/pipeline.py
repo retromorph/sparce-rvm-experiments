@@ -126,7 +126,9 @@ def stage_prepare(cfg: dict, paths: Paths, log: Log, *, limit_clusters: int = 0,
     if not changes:
         raise RuntimeError("Catalog is empty: no src/sparce/catalog/*.py modules with CHANGES found")
     split = SplitConfig(train_fraction=float(dcfg.get("train_fraction", 0.45)), val_fraction=float(dcfg.get("val_fraction", 0.15)),
-                        heldout_family_fraction=float(dcfg.get("heldout_family_fraction", 0.2)), seed=int(cfg["run"]["seed"]))
+                        heldout_family_fraction=float(dcfg.get("heldout_family_fraction", 0.2)), seed=int(cfg["run"]["seed"]),
+                        timestamp_mode=str(dcfg.get("timestamp_mode", "release_offset")),
+                        deployment_start=str(dcfg.get("deployment_start", "2025-02-01")))
     result = build_tasks(changes, split, variants=int(dcfg.get("variants", 2)))
     if limit_clusters:
         keep = sorted({t.cluster_id for t in result.tasks})

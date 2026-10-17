@@ -6,7 +6,9 @@ experiment_ids = ["E1", "E2", "E3"]
 mlflow_uri = "http://127.0.0.1:5000"
 mlflow_experiment = "sparce-poc"
 output_dir = "reports/generated"
-work_dir = "runs/sparce-a4000-poc"
+work_dir = "runs/full1"
+# appended to the report as Appendix A when present (post-hoc re-split; never eligible for GO)
+exploratory_work_dir = "runs/full2"
 # Optional pilot limit on the number of clusters (0 = full benchmark)
 limit_clusters = 0
 
@@ -66,6 +68,8 @@ e2_methods = ["rvm", "knn_cap", "random", "medoids"]
 false_submissions = 20
 
 [dataset]
+# protocol v0.2: simulated event times = real release date + exponential offset (mean 150 days)
+timestamp_mode = "release_offset"
 variants = 2
 train_fraction = 0.45
 val_fraction = 0.15

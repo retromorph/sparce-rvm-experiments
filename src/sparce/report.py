@@ -72,7 +72,7 @@ def failure_cases(work_dir: Path, e1: dict, n: int = 12) -> list[dict]:
     return picked
 
 
-def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict) -> Path:
+def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict, exploratory: Path | None = None) -> Path:
     work_dir, out_dir = Path(work_dir), Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     res = work_dir / "results"
@@ -155,6 +155,10 @@ def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict) -> 
     A("**Deviations from the protocol.** (1) CodeSyncBench replaced by a first-party executable catalog (license/executability). (2) Stream timestamps are simulated (exponential offsets after the real release date, deterministic per cluster) because first-party programs have no observation time. (3) max_new_tokens 384 instead of 256 (whole-module rewrites), identical for all methods. (4) Seeds vary memory fitting/selection and bootstrap only; candidate generation is produced once per task with a fixed task-derived seed (GPU budget). (5) SERAC/GRACE/WISE/MEMOIR were not run (out of the 16 GB / 9 h budget). Recorded before test evaluation in docs/EXPERIMENT_PROTOCOL.md v0.2.\n")
     # 4
     A("## 4. E1 — Verified error repair\n")
+    cov = e1.get("coverage", {})
+    A(f"**Memory coverage of the test split.** Families with at least one training repair: {cov.get('families_with_train_repairs')} of {split.get('n_families')}; test repairs in such families (\"seen_family\"): {cov.get('coverage_test_subsets', {}).get('seen_family')} vs unseen {cov.get('coverage_test_subsets', {}).get('unseen_family')} "
+      f"(nominal split labels were known={cov.get('nominal_test_subsets', {}).get('known_family')}, heldout={cov.get('nominal_test_subsets', {}).get('heldout_family')}). Headroom tasks (base wrong, some candidate passes): {e1.get('headroom_tasks')} overall, {e1.get('headroom_tasks_seen_family')} in seen families. "
+      f"Base pass@1 by package: {json.dumps({k: round(v, 2) for k, v in e1.get('base_pass_at_1_by_package', {}).items()})}; test repairs by package {json.dumps(e1.get('test_repair_by_package', {}))}.\n")
     A(f"Test repairs N={e1.get('n_test_repair')} ({e1.get('n_test_repair_clusters')} clusters); train events {e1.get('n_train')} ({e1.get('train_events_with_pair_label')} with a pairwise label); val {e1.get('n_val')}. "
       f"Greedy-only (K=1) pass@1 = {_f(e1.get('greedy_pass_at_1'))}%; candidate recall@K = {_f(e1.get('candidate_recall_at_k'))}% (known families {_f(e1.get('candidate_recall_at_k_known'))}%, held-out families {_f(e1.get('candidate_recall_at_k_heldout'))}%). Reranking cannot exceed recall@K.\n")
     A("| Method | N | pass@1 % | paired Δ vs base pp [95% CI] | known-fam % | held-out-fam % | fixes / regressions | activations | tokens/task | p95 decision ms | control regressions |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
@@ -162,7 +166,7 @@ def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict) -> 
         e = next((x for x in entries if x.get("seed") == seed0), entries[0])
         r = e["repair"]; bs = e.get("repair_by_subset", {})
         tokens = e.get("tokens_per_task", e1.get("tokens_per_task", {}).get("base"))
-        A(f"| {name} | {r.get('n')} | {_f(r.get('pass_at_1'))} | {_ci(r)} | {_f(bs.get('known_family', {}).get('pass_at_1'))} | {_f(bs.get('heldout_family', {}).get('pass_at_1'))} | {r.get('fixes')} / {r.get('regressions')} | {r.get('activations')} | {tokens:.0f} | {r.get('latency_p95_ms', 0):.2f} | {e.get('controls', {}).get('regressions')} |")
+        A(f"| {name} | {r.get('n')} | {_f(r.get('pass_at_1'))} | {_ci(r)} | {_f(bs.get('seen_family', {}).get('pass_at_1'))} | {_f(bs.get('unseen_family', {}).get('pass_at_1'))} | {r.get('fixes')} / {r.get('regressions')} | {r.get('activations')} | {tokens:.0f} | {r.get('latency_p95_ms', 0):.2f} | {e.get('controls', {}).get('regressions')} |")
     A(f"| verifier-assisted (any of K passes) | {e1.get('n_test_repair')} | {_f(e1.get('candidate_recall_at_k'))} | — | {_f(e1.get('candidate_recall_at_k_known'))} | {_f(e1.get('candidate_recall_at_k_heldout'))} | — | — | — | +{e1.get('verifier_ms_per_task_mean', 0):.0f} ms verifier | — |")
     A(f"\nSeed sensitivity (mean ± sd of pass@1 over seeds {e1.get('seeds')}): " + "; ".join(
         f"{name} {_seed_stat(entries)}" for name, entries in e1.get("methods", {}).items()) + ".")
@@ -233,9 +237,49 @@ def write_report(cfg: dict, work_dir: Path, out_dir: Path, mlflow_ids: dict) -> 
     A(f"\n**Overall: {overall}.** Technical debt / risks: simulated stream timestamps; first-party benchmark authored by the same team (possible unconscious bias toward alias-rename changes); single frozen 3B model; MiniLM is a natural-language embedder; Laplace posterior may be over-confident under shift; rules baseline is mined from the same training events; no multiplicity correction. "
       "Next experiments: (1) generation-time steering so memory can add a candidate when recall@K is the ceiling; (2) a second embedding model (code-trained) and kernel ablation; (3) real observed-time stream from an organisation's CI logs with the same admission gate.\n")
     A(f"\n**Review packet.** Report: `{out_dir / 'SPARCE_POC_REPORT.md'}`; manifests: `{out_dir / 'environment_manifest.json'}`, `{out_dir / 'split_manifest.json'}`, `{out_dir / 'catalog_validation.json'}`; results: e1/e2/e3.json + CSVs + plots/ in the same directory; MLflow runs: " + ", ".join(f"{k}=`{v}`" for k, v in mlflow_ids.items()) + f"; logs: `{work_dir / 'suite.log'}`; per-task decisions inside e1.json/e2.json (`per_task`). Not a production-readiness claim.\n")
+    if exploratory is not None and (Path(exploratory) / "results" / "e1.json").exists():
+        L.extend(exploratory_section(cfg, Path(exploratory), out_dir))
     path = out_dir / "SPARCE_POC_REPORT.md"
     path.write_text("\n".join(L), encoding="utf8")
     return path
+
+
+def exploratory_section(cfg: dict, work_dir: Path, out_dir: Path) -> list[str]:
+    """Appendix for a post-hoc re-split run. Never eligible for GO; reported for diagnosis only."""
+    res = work_dir / "results"
+    e1, e2, e3 = _load(res / "e1.json"), _load(res / "e2.json"), _load(res / "e3.json")
+    split = _load(work_dir / "data" / "split_manifest.json")
+    sub = out_dir / "exploratory_v0.3"
+    sub.mkdir(parents=True, exist_ok=True)
+    for name in ("e1.json", "e2.json", "e3.json", "e1_summary.csv", "e2_rows.csv", "e3_stream.csv"):
+        if (res / name).exists():
+            shutil.copy(res / name, sub / name)
+    if (res / "plots").exists():
+        shutil.copytree(res / "plots", sub / "plots", dirs_exist_ok=True)
+    if (work_dir / "data" / "split_manifest.json").exists():
+        shutil.copy(work_dir / "data" / "split_manifest.json", sub / "split_manifest.json")
+    seed0 = e1.get("seeds", [0])[0]
+    cov = e1.get("coverage", {})
+    L = ["\n## Appendix A. Exploratory re-split (protocol v0.3, post hoc — NOT eligible for GO)\n"]
+    A = L.append
+    A("The preregistered v0.2 split anchors simulated event times to each API change's real release date, so the global chronological cutoff sorted whole families by release date: the latest families (numpy 2.0, SciPy 1.14/1.15, CPython 3.13) fell entirely into test and memory had no training repair for most test tasks (§4). "
+      "This appendix re-runs the identical cached candidates, verifier outcomes and embeddings under a *deployment-window* timing model (all events observed after a single adoption date, 2025-02-01, that post-dates every catalogued release, with the same per-cluster exponential offsets), which interleaves families in time while still never placing an event before its real release. "
+      "The split rule, the held-out-family fraction, the hyperparameter grids, the budgets and the thresholds are unchanged. Because this was decided after seeing v0.2 test results, it is exploratory: it can explain the null result but cannot upgrade any decision.\n")
+    A(f"Split: repairs train/val/test = {json.dumps(split.get('splits'))}; coverage: families with train repairs {cov.get('families_with_train_repairs')}, test repairs seen/unseen = {cov.get('coverage_test_subsets', {}).get('seen_family')}/{cov.get('coverage_test_subsets', {}).get('unseen_family')}; headroom {e1.get('headroom_tasks')} ({e1.get('headroom_tasks_seen_family')} in seen families); recall@K {_f(e1.get('candidate_recall_at_k'))}% (seen {_f(e1.get('candidate_recall_at_k_known'))}%, unseen {_f(e1.get('candidate_recall_at_k_heldout'))}%). "
+      f"Tuned: rvm {json.dumps(e1.get('tuned', {}).get('rvm', {}).get('best'))}, knn {json.dumps(e1.get('tuned', {}).get('knn', {}).get('best'))}.\n")
+    A("| Method | N | pass@1 % | paired Δ vs base pp [95% CI] | seen-fam % | unseen-fam % | fixes / regressions | activations | control regressions |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    for name, entries in e1.get("methods", {}).items():
+        e = next((x for x in entries if x.get("seed") == seed0), entries[0])
+        r = e["repair"]; bs = e.get("repair_by_subset", {})
+        A(f"| {name} | {r.get('n')} | {_f(r.get('pass_at_1'))} | {_ci(r)} | {_f(bs.get('seen_family', {}).get('pass_at_1'))} | {_f(bs.get('unseen_family', {}).get('pass_at_1'))} | {r.get('fixes')} / {r.get('regressions')} | {r.get('activations')} | {e.get('controls', {}).get('regressions')} |")
+    d1, d2, d3 = e1.get("decision", {}), e2.get("decision", {}), e3.get("decision", {})
+    A(f"\nWould-be gate outcomes under v0.3 (informational only): E1 {d1.get('status')} (Δ {d1.get('gain_pp', float('nan')):+.1f} pp [{d1.get('ci_low_pp', float('nan')):+.1f}, {d1.get('ci_high_pp', float('nan')):+.1f}], vs {d1.get('strongest_comparator')} {d1.get('margin_vs_strongest_pp', float('nan')):+.1f} pp); "
+      f"E2 {d2.get('status')} (count-matched wins {d2.get('improvement_capacities_count_matched')}, bytes-matched {d2.get('improvement_capacities_bytes_matched')}, non-dominated {d2.get('rvm_non_dominated')}, compression {d2.get('compression_capacities')}); "
+      f"E3 {d3.get('status')} (collateral upper {_f(d3.get('collateral_wilson_upper'), 2)}%, retention loss at 100 {d3.get('retention_loss_pp_at_100')}, rollback exact {e3.get('rollback', {}).get('exact')}).")
+    rvm = (e1.get("methods", {}).get("rvm") or [{}])[0]
+    A(f"\nSPaRCE decision reasons on the v0.3 test split: {json.dumps(rvm.get('reasons', {}))}. Per-scope fits: {json.dumps({k: (v.get('status'), v.get('n_pairs'), v.get('active')) for k, v in rvm.get('fit_log', {}).items()})}.")
+    A("\n![Exploratory E1](exploratory_v0.3/plots/e1_delta_vs_base.png)\n![Exploratory E2](exploratory_v0.3/plots/e2_accuracy_vs_bytes.png)\n")
+    return L
 
 
 def _seed_stat(entries: list[dict]) -> str:

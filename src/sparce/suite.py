@@ -310,7 +310,8 @@ def run_suite(cfg: dict, *, work_dir: Path, resume: bool, no_mlflow: bool, limit
     if "report" in stages:
         from sparce.report import write_report
         out_dir = Path(cfg["run"]["output_dir"])
-        report_path = write_report(cfg, work_dir, out_dir, tracker.ids)
+        exploratory = cfg["run"].get("exploratory_work_dir")
+        report_path = write_report(cfg, work_dir, out_dir, tracker.ids, Path(exploratory) if exploratory else None)
         log(f"report written to {report_path}")
         results["report"] = str(report_path)
     return results

@@ -261,9 +261,31 @@ def _filter(outs: Sequence[Outcome], kinds: Sequence[str]) -> list[Outcome]:
     return [o for o in outs if o.kind in kinds]
 
 
+def relabel_by_coverage(data: DataBundle) -> dict:
+    """Subset labels by ACTUAL memory coverage: a family is 'seen' iff the training split holds >= 1 repair event
+    of that family. The nominal split labels (known/heldout) are kept in the returned summary."""
+    seen = {p.ex.family_id for p in data.base if p.ex.split == "train" and p.ex.kind == "repair"}
+    nominal = {}
+    for pool in (data.base, data.rag):
+        for p in pool:
+            if p.ex.split == "test" and p.ex.kind == "repair" and pool is data.base:
+                nominal[p.ex.subset] = nominal.get(p.ex.subset, 0) + 1
+            new = "seen_family" if p.ex.family_id in seen else "unseen_family"
+            p.ex.subset = new
+            for e in p.alt_examples:
+                e.subset = new
+    covered = {"seen_family": 0, "unseen_family": 0}
+    for p in data.base:
+        if p.ex.split == "test" and p.ex.kind == "repair":
+            covered[p.ex.subset] += 1
+    return {"families_with_train_repairs": len(seen), "nominal_test_subsets": nominal, "coverage_test_subsets": covered}
+
+
 def run_e1(data: DataBundle, log, seeds: Sequence[int]) -> dict:
     cfg = data.cfg
     n_boot = int(cfg["eval"]["bootstrap_replicates"])
+    coverage = relabel_by_coverage(data)
+    log(f"E1: coverage {coverage}")
     train, val, test = data.split("train"), data.split("val"), data.split("test")
     rvm_grid = _grid(cfg["rvm"], {"length_scale": "length_scale_grid", "min_support": "min_support_grid",
                                   "z_score": "posterior_z_grid", "margin_threshold": "margin_threshold_grid"})
@@ -272,13 +294,17 @@ def run_e1(data: DataBundle, log, seeds: Sequence[int]) -> dict:
     tuned = {"rvm": tune("rvm", rvm_grid, train, val, capacity=int(cfg["rvm"]["max_basis"])),
              "knn": tune("knn_full", knn_grid, train, val)}
     log(f"E1: tuned rvm={tuned['rvm']['best']} knn={tuned['knn']['best']}")
-    results: dict = {"tuned": tuned, "n_train": len(train), "n_val": len(val), "n_test": len(test),
+    results: dict = {"tuned": tuned, "coverage": coverage, "n_train": len(train), "n_val": len(val), "n_test": len(test),
                      "n_test_repair": len(_repair(test)), "n_test_repair_clusters": len({p.ex.cluster_id for p in _repair(test)}),
                      "methods": {}, "per_task": {}, "seeds": list(seeds)}
     test_repair = _repair(test)
     results["candidate_recall_at_k"] = float(np.mean([p.recall_at_k for p in test_repair])) if test_repair else float("nan")
-    results["candidate_recall_at_k_known"] = float(np.mean([p.recall_at_k for p in test_repair if p.ex.subset == "known_family"]) if any(p.ex.subset == "known_family" for p in test_repair) else float("nan"))
-    results["candidate_recall_at_k_heldout"] = float(np.mean([p.recall_at_k for p in test_repair if p.ex.subset == "heldout_family"]) if any(p.ex.subset == "heldout_family" for p in test_repair) else float("nan"))
+    results["candidate_recall_at_k_known"] = float(np.mean([p.recall_at_k for p in test_repair if p.ex.subset == "seen_family"]) if any(p.ex.subset == "seen_family" for p in test_repair) else float("nan"))
+    results["candidate_recall_at_k_heldout"] = float(np.mean([p.recall_at_k for p in test_repair if p.ex.subset == "unseen_family"]) if any(p.ex.subset == "unseen_family" for p in test_repair) else float("nan"))
+    results["headroom_tasks"] = int(sum(1 for p in test_repair if not p.base_correct and p.recall_at_k))
+    results["headroom_tasks_seen_family"] = int(sum(1 for p in test_repair if not p.base_correct and p.recall_at_k and p.ex.subset == "seen_family"))
+    results["base_pass_at_1_by_package"] = {pkg: float(np.mean([p.base_correct for p in test_repair if p.task.package == pkg])) for pkg in sorted({p.task.package for p in test_repair})}
+    results["test_repair_by_package"] = {pkg: int(sum(1 for p in test_repair if p.task.package == pkg)) for pkg in sorted({p.task.package for p in test_repair})}
     results["greedy_pass_at_1"] = float(np.mean([p.cand_pass[0] is True for p in test_repair])) if test_repair else float("nan")
     results["tokens_per_task"] = {"base": float(np.mean([p.tokens_prompt + p.tokens_completion for p in test])) if test else 0.0}
     results["gen_ms_per_task_p95"] = percentile([p.gen_ms for p in test], 95)

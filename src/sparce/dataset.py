@@ -188,11 +188,20 @@ def rename_identifiers(code: str, test_code: str, seed: str, protected_extra: It
 
 
 # --------------------------------------------------------------------------- timestamps/splits
-def simulated_timestamp(change_date: str, cluster_key: str, mean_days: float = 150.0) -> str:
-    """Deterministic exponential offset after the breaking release date."""
+def simulated_timestamp(change_date: str, cluster_key: str, mean_days: float = 150.0, *, mode: str = "release_offset",
+                        deployment_start: str = "2025-02-01") -> str:
+    """Deterministic simulated observation time of a cluster's failure events.
+
+    ``release_offset`` (protocol v0.2): exponential offset after the real breaking-release date, so a global
+    chronological cutoff orders whole API families by release date.
+    ``deployment_window`` (protocol v0.3, exploratory): exponential offset after a single deployment start date
+    that post-dates every catalogued release, i.e. one organisation adopting the tool and meeting failures of all
+    families interleaved in time. Events never precede the real release date.
+    """
     u = (int(_sha("ts", cluster_key), 16) % 1_000_000 + 0.5) / 1_000_000
     days = -mean_days * math.log(1 - u)
-    base = datetime.fromisoformat(change_date).replace(tzinfo=timezone.utc)
+    release = datetime.fromisoformat(change_date).replace(tzinfo=timezone.utc)
+    base = release if mode == "release_offset" else max(release, datetime.fromisoformat(deployment_start).replace(tzinfo=timezone.utc))
     return (base + timedelta(days=days)).isoformat()
 
 
@@ -202,6 +211,8 @@ class SplitConfig:
     val_fraction: float = 0.15
     heldout_family_fraction: float = 0.2
     seed: int = 42
+    timestamp_mode: str = "release_offset"     # or "deployment_window" (exploratory v0.3)
+    deployment_start: str = "2025-02-01"
 
 
 @dataclass
@@ -232,7 +243,7 @@ def build_tasks(changes: list[ApiChange], split: SplitConfig | None = None, *, v
         api_names = {change.old_api.split(".")[-1], change.new_api.split(".")[-1]}
         for program in change.programs:
             cluster = f"{change.family_id}/{program.name}"
-            ts = simulated_timestamp(change.change_date, cluster)
+            ts = simulated_timestamp(change.change_date, cluster, mode=split.timestamp_mode, deployment_start=split.deployment_start)
             for v in range(variants):
                 if v == 0:
                     old_c, new_c, test_c = program.old_code, program.new_code, program.test_code
@@ -258,7 +269,7 @@ def build_tasks(changes: list[ApiChange], split: SplitConfig | None = None, *, v
                     hidden.append(HiddenRecord(tid, ref, test_c, change.old_api, change.new_api))
         for sib in change.siblings:
             cluster = f"{change.family_id}/sib/{sib.name}"
-            ts = simulated_timestamp(change.change_date, cluster)
+            ts = simulated_timestamp(change.change_date, cluster, mode=split.timestamp_mode, deployment_start=split.deployment_start)
             for v in range(variants):
                 if v == 0:
                     code_c, test_c = sib.code, sib.test_code
