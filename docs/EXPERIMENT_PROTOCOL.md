@@ -61,3 +61,38 @@ E3 **GO** if collateral upper bound <=1%, retention <=2 pp and rollback exact; *
 - Show negative outcomes; include comparisons at equal inference budget. Avoid cherry-picking model checkpoint, task families or hyperparameters using final test.
 - Log MLflow run IDs, commit SHA, uv.lock hash, CUDA/driver info, GPUs, model/dataset revisions and artifact SHA256s. Attach raw (non-sensitive) CSV/JSON summaries, plots and the report.
 - All go/no-go thresholds here are *proposed research design choices*, not empirically validated safety guarantees. If infeasible, record changes before test evaluation and note departures.
+
+## Version 0.2 — 2026-10-17, frozen before any test-split evaluation
+
+Recorded by the coding agent after inspecting the remote A4000 host and the candidate benchmark sources, and **before** any
+candidate was generated or scored on the final test split. Thresholds in E1–E3 above are unchanged.
+
+1. **Benchmark source.** CodeSyncBench (`LuckyVoyage/CodeSyncBench`, GitHub `Lucky-Wang-Chenlong/CodeSync`) was inspected on
+   2026-10-17: no dataset card, no license file visible, static QA/completion records (`API_path`, `question`, `answer`,
+   `updated_signature`, `outdated_signature`) and no executable tests. It is therefore not used as evidence. The benchmark is a
+   first-party catalog (`src/sparce/catalog/`) of real, officially documented breaking changes (numpy 2.0, pandas 2.0,
+   SciPy 1.12–1.15, scikit-learn 1.2–1.6, Pillow 10, networkx 3, Jinja 3, pydantic 2, CPython 3.12/3.13 removals), each with
+   6–8 distinct executable programs plus 2 unchanged-sibling controls, validated by execution in pinned Docker images
+   (old code passes on the legacy pin and fails on the new pin; the reference fix passes). Programs that fail this check are
+   excluded and listed in `catalog_validation.json`.
+2. **Units and splits.** The cluster unit is the program; a second surface variant (consistent identifier renaming) shares the
+   cluster id and is never split from it. Stream timestamps are simulated: a deterministic exponential offset (mean 150 days)
+   after the real release date of the breaking change, per cluster. Chronological split at the cluster level: earliest 45 %
+   of in-scope repair clusters = train (memory stream), next 15 % = validation (hyperparameters and admission gate only),
+   remainder = test; additionally 20 % of API families (hash-selected) are held out entirely into test ("heldout_family").
+3. **Candidates and budget.** K = 2 per task: candidate 0 greedy, candidate 1 nucleus sampling (T = 0.7, top-p 0.95) with a
+   fixed task-derived seed; assistant turn prefilled with a code fence for all methods; max_new_tokens = 384 (not 256) because
+   whole-module rewrites of 15–25-line programs exceed 256 tokens; max_input_tokens = 2048; batch size 12 (measured 6.6 GB
+   peak on the A4000). Candidates are generated once per task; seeds vary memory selection/fitting and bootstrap only.
+   Base score = mean per-token log-likelihood of the response.
+4. **Comparators.** B2 "documentation RAG" is implemented as pinned-version API-inventory retrieval: the installed package's
+   public names, signatures and first docstring lines (plus NumPy's expired-attribute messages) are dumped inside the sandbox
+   and the top-6 lexical matches to the error headline / request identifiers are prepended to the prompt. It is a generator
+   baseline with its own K = 2 candidates and its own (larger) token cost. SERAC/GRACE/WISE/MEMOIR are not run (budget).
+5. **Hyperparameters** (RVM length scale, support, z, margin; kNN k, threshold, support) are selected on validation by overall
+   accuracy over repairs and controls, then locked. The grids are in `configs/a4000.toml`.
+6. **E3 admission gate**: a candidate memory is promoted only if validation accuracy is not below the frozen base and
+   validation regressions are ≤ max(1, 1 %) of validation tasks; otherwise it is quarantined. Unverified submissions (no
+   verifier evidence hash) are rejected before fitting. Rollback restores the full joint posterior snapshot of every scope
+   partition and must reproduce the recorded decisions (recommend flag, mean margin, lower bound) bit-exactly.
+7. **Power.** N_test(repair) ≥ 200 and ≥ 1000 base-correct controls are required for GO/NO-GO; otherwise INCONCLUSIVE.

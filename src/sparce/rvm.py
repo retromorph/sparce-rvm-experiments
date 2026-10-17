@@ -162,10 +162,11 @@ class SparseBayesianPairRanker:
             if not removed and float(np.max(np.abs(next_log - old_log))) < self.config.tolerance:
                 break
         weights, covariance = self._map_and_covariance(phi, offset, labels, alpha, weights)
-        self.prototypes = z
-        self.weights = weights
-        self.covariance = covariance
-        self.alpha = alpha
+        # C-contiguous float64 storage so that a JSON snapshot round trip reproduces predictions bit-exactly
+        self.prototypes = np.ascontiguousarray(z, dtype=np.float64)
+        self.weights = np.ascontiguousarray(weights, dtype=np.float64)
+        self.covariance = np.ascontiguousarray(covariance, dtype=np.float64)
+        self.alpha = np.ascontiguousarray(alpha, dtype=np.float64)
         self.n_train = len(a)
         return self
 

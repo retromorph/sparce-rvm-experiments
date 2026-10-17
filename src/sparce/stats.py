@@ -65,3 +65,56 @@ def paired_accuracy_delta_interval(
     alpha = (1 - confidence) / 2
     low, high = np.quantile(out, [alpha, 1 - alpha])
     return point, float(low), float(high)
+
+
+def brier_score(probabilities: Sequence[float], labels: Sequence[int]) -> float:
+    p = np.asarray(probabilities, dtype=float)
+    y = np.asarray(labels, dtype=float)
+    if p.shape != y.shape or len(p) == 0:
+        raise ValueError("Need aligned, nonempty probabilities and labels")
+    return float(np.mean((p - y) ** 2))
+
+
+def expected_calibration_error(probabilities: Sequence[float], labels: Sequence[int], n_bins: int = 10) -> dict:
+    """ECE with equal-width bins; returns the reliability table as well."""
+    p = np.asarray(probabilities, dtype=float)
+    y = np.asarray(labels, dtype=float)
+    if p.shape != y.shape or len(p) == 0:
+        raise ValueError("Need aligned, nonempty probabilities and labels")
+    edges = np.linspace(0.0, 1.0, n_bins + 1)
+    ece = 0.0
+    table = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        mask = (p >= lo) & (p < hi) if hi < 1.0 else (p >= lo) & (p <= hi)
+        if not mask.any():
+            continue
+        conf, acc, n = float(p[mask].mean()), float(y[mask].mean()), int(mask.sum())
+        ece += n / len(p) * abs(acc - conf)
+        table.append({"bin_low": float(lo), "bin_high": float(hi), "n": n, "confidence": conf, "accuracy": acc})
+    return {"ece": float(ece), "n": int(len(p)), "bins": table}
+
+
+def cluster_bootstrap_proportion_upper(events: Sequence[bool], cluster_ids: Sequence[str], *, seed: int = 42,
+                                       n_boot: int = 2000, confidence: float = 0.95) -> float:
+    """One-sided upper bound for a proportion under cluster dependence (percentile bootstrap)."""
+    e = np.asarray(events, dtype=float)
+    if len(e) == 0 or len(cluster_ids) != len(e):
+        raise ValueError("Need aligned nonempty events and cluster ids")
+    clusters: dict[str, list[int]] = {}
+    for i, c in enumerate(cluster_ids):
+        clusters.setdefault(str(c), []).append(i)
+    groups = [np.asarray(v, dtype=int) for v in clusters.values()]
+    if len(groups) < 2:
+        return 1.0
+    rng = np.random.default_rng(seed)
+    out = np.empty(n_boot)
+    for b in range(n_boot):
+        chosen = rng.integers(0, len(groups), size=len(groups))
+        idx = np.concatenate([groups[j] for j in chosen])
+        out[b] = e[idx].mean()
+    return float(min(1.0, np.quantile(out, confidence)))
+
+
+def percentile(values: Sequence[float], q: float) -> float:
+    arr = np.asarray(list(values), dtype=float)
+    return float(np.percentile(arr, q)) if len(arr) else float("nan")
